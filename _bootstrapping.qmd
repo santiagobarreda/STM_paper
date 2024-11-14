@@ -1,0 +1,624 @@
+---
+title: Boostrap Analysis
+format: docx
+---
+
+
+# Bootstrap preparation
+
+```{r}
+library (STM)
+data (h95_classifications)
+data (h95_data)
+h95 = h95_data
+
+bootstrap_iterations = 1000
+```
+
+
+## Make bootstrap data
+
+Generate bootstrap data. Use a linear imputation (with uncertainty) for each sample.
+
+```{r}
+# read in clean data
+speaker_split = split (h95_data, h95_data[,"speaker"])
+speakers = sort(unique(h95_data$speaker))
+
+i=1
+set.seed (1901)     
+bootstrap_datasets = list()
+for ( i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  
+  testing = sort(sample ((1:139), 60, replace = FALSE))
+  testing = do.call(rbind, speaker_split[testing])
+
+  training = (1:139)[!((1:139) %in% testing)]
+  training = sort(sample (training, 79, replace = TRUE))
+  training = do.call(rbind, speaker_split[training])
+  
+  # impute NA values linearly (in log) and with residual error included
+  training[,c(10:12,28:30)] =
+    impute_NA (log(training[,c(10:12,28:30)]), 
+               training$speaker, training$vowel, sim_error = TRUE)
+  
+  # impute NA values linearly (in log) and with residual error included
+  testing[,c(10:12,28:30)] =
+    impute_NA (log(testing[,c(10:12,28:30)]), 
+               testing$speaker, testing$vowel, sim_error = TRUE)
+
+  # find psi (log mean) per speaker and add to data
+  gmff = rowMeans (log(training[,c(10:12,28:30)]))
+  psi = aggregate (gmff ~ speaker, training, FUN = mean)
+  training$psi = psi$gmff[match(training$speaker, psi$speaker)]
+  
+  # find psi (log mean) per speaker and add to data
+  gmff = rowMeans (log(testing[,c(10:12,28:30)]))
+  psi = aggregate (gmff ~ speaker, testing, FUN = mean)
+  testing$psi = psi$gmff[match(testing$speaker, psi$speaker)]
+
+  training = training[,-c(4:9,13:27,36:37)]
+  testing = testing[,-c(4:9,13:27,36:37)]
+  
+  # add to list (final output)
+  bootstrap_datasets[[i]] = list(training=training, testing=testing)
+}
+
+saveRDS (bootstrap_datasets, "simulation_data/bootstrap_datasets.RDS")
+```
+
+
+## Make bootstrap templates
+
+Pre-calculate templates for 1 and 2 formant slice data, and for hz and log mean normalized spaces. 
+
+```{r}
+templates_lm = rep(list(),bootstrap_iterations)
+templates_hz = rep(list(),bootstrap_iterations)
+templates_hz_log = rep(list(),bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_data = bootstrap_datasets[[i]]$training
+  tmp_ffs = log(t_data[,c(4:9)])
+ 
+  ## Log-mean normalization and template
+    
+  templates_lm[[i]] = 
+    create_template (tmp_ffs[,1:6]-t_data$psi, t_data$vowel, shared_covar = TRUE)
+
+  ## hertz, no norm
+  
+  templates_hz[[i]] = 
+    create_template (t_data[,c(4:9)],t_data$vowel, shared_covar = TRUE)
+  
+  ## Log hertz, no norm
+  
+  templates_hz_log[[i]] = 
+    create_template (log(t_data[,c(4:9)]),t_data$vowel, shared_covar = TRUE)
+
+}
+```
+
+```{r}
+saveRDS (templates_lm, 'simulation_data/templates_lm.RDS')
+saveRDS (templates_hz, 'simulation_data/templates_hz.RDS')
+saveRDS (templates_hz_log, 'simulation_data/templates_hz_log.RDS')
+```
+
+
+# Boostrapping
+
+Load pre-sampled bootstrap data and determine number of iterations:
+
+```{r}
+bootstrap_datasets = readRDS ("simulation_data/bootstrap_datasets.RDS")
+bootstrap_iterations = length (bootstrap_datasets)
+```
+
+And templates:
+
+```{r}
+templates_lm = readRDS("simulation_data/templates_lm.RDS")
+templates_hz = readRDS("simulation_data/templates_hz.RDS")
+templates_hz_log = readRDS("simulation_data/templates_hz_log.RDS")
+```
+
+
+## No normalization boostrapping
+
+### Hz  
+
+```{r}
+hz_loglikelihoods = rep(0,bootstrap_iterations)
+hz_intended_loglikelihoods = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  training = t_dat$training
+  testing = t_dat$testing
+  
+  testing_ffs = testing[,c(4:9)]
+  testing_classifications = testing[,15:26]
+ 
+  hz_posteriors = STM (testing_ffs, templates_hz[[i]])
+  
+  hz_loglikelihoods[i] = model_likelihood (testing_classifications, hz_posteriors$df)
+  
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  hz_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, hz_posteriors$df)
+}
+```
+
+
+```{r}
+save(hz_loglikelihoods = hz_loglikelihoods, 
+     hz_intended_loglikelihoods = hz_intended_loglikelihoods, 
+     file = "simulation_data/hz_sim.RData")
+```
+
+### Log Hz  
+
+
+```{r}
+hz_log_loglikelihoods = rep(0,bootstrap_iterations)
+hz_log_intended_loglikelihoods = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  training = t_dat$training
+  testing = t_dat$testing
+  
+  testing_ffs = testing[,c(4:9)]
+  testing_classifications = testing[,15:26]
+
+  hz_log_posteriors = STM (log(testing_ffs), templates_hz_log[[i]])
+
+  hz_log_loglikelihoods[i] = model_likelihood (testing_classifications,
+                                               hz_log_posteriors$df)
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  hz_log_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, hz_log_posteriors$df)
+}
+```
+
+
+```{r}
+save(hz_log_loglikelihoods = hz_log_loglikelihoods, 
+     hz_log_intended_loglikelihoods = hz_log_intended_loglikelihoods, 
+     file = "simulation_data/hz_log_sim.RData")
+```
+
+
+## PSTM1 boostrapping
+
+### Balanced data PSTM1
+
+```{r}
+PSTM1_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM1_intended_loglikelihoods = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  training = t_dat$training
+  testing = t_dat$testing
+  
+  testing_ffs = testing[,c(4:9)]
+  testing_classifications = testing[,15:26]
+  
+  PSTM1_posteriors = STM (log(testing_ffs)-testing$psi, templates_lm[[i]])
+
+  PSTM1_loglikelihoods[i] = 
+    model_likelihood (testing_classifications, PSTM1_posteriors$df)
+  
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  PSTM1_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, PSTM1_posteriors$df)
+  
+}
+```
+
+```{r}
+save(PSTM1_loglikelihoods = PSTM1_loglikelihoods,
+     PSTM1_intended_loglikelihoods = PSTM1_intended_loglikelihoods,
+     file = "simulation_data/PSTM1_sim.RData")
+```
+
+
+### Single-token $\psi_s$ 
+
+```{r}
+PSTM1_single_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM1_single_intended_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM1_single_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  training = t_dat$training
+  testing = t_dat$testing
+  
+  testing_ffs = testing[,c(4:9)]
+  testing_classifications = testing[,15:26]
+ 
+  testing_psi = rowMeans(log(testing[,c(4:9)]))
+  true_psi = testing$psi
+  
+  PSTM1_single_posteriors = STM (log(testing_ffs)-testing_psi, templates_lm[[i]])
+
+  PSTM1_single_loglikelihoods[i] = 
+    model_likelihood (testing_classifications, PSTM1_single_posteriors$df)
+  
+  PSTM1_single_rmss[i] = sqrt(mean(((true_psi-testing_psi))^2))
+   
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  PSTM1_single_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, PSTM1_single_posteriors$df)
+}
+```
+
+```{r}
+save(PSTM1_single_loglikelihoods = PSTM1_single_loglikelihoods,
+     PSTM1_single_intended_loglikelihoods = PSTM1_single_intended_loglikelihoods,
+     PSTM1_single_rmss = PSTM1_single_rmss,
+     file = "simulation_data/PSTM1_single_sim.RData")
+```
+
+
+## BSTM boostrapping
+
+### Method 6  
+
+
+```{r}
+BSTM6_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM6_intended_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM6_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  # BSTM - Method 6
+  t_BSTM = BSTM (testing_ffs, testing_f0s, templates_lm[[i]])
+
+  winners = get_winners (t_BSTM)
+  BSTM6_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+  
+  posteriors = get_posterior(t_BSTM)
+  BSTM6_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+  
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  BSTM6_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, posteriors$df)
+
+}
+
+```
+
+
+```{r}
+save(BSTM6_loglikelihoods = BSTM6_loglikelihoods, 
+     BSTM6_intended_loglikelihoods = BSTM6_intended_loglikelihoods,
+     BSTM6_rmss = BSTM6_rmss,
+     file = "simulation_data/BSTM6_sim.RData")
+```
+
+
+### Method 3  
+
+```{r}
+BSTM3_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM3_intended_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM3_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  t_BSTM = BSTM (testing_ffs, testing_f0s, templates_lm[[i]], method=method3)
+
+  winners = get_winners (t_BSTM)
+  BSTM3_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+
+  posteriors = get_posterior(t_BSTM)
+  BSTM3_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+ 
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  BSTM3_intended_loglikelihoods[i] = model_likelihood(intended_phoneme,posteriors$df)
+}
+
+```
+
+
+```{r}
+save(BSTM3_loglikelihoods=BSTM3_loglikelihoods, 
+     BSTM3_intended_loglikelihoods = BSTM3_intended_loglikelihoods,
+     BSTM3_rmss=BSTM3_rmss,
+     file = "simulation_data/BSTM3_sim.RData")
+```
+
+
+
+### Method 2  
+
+```{r}
+BSTM2_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM2_intended_loglikelihoods = rep(0,bootstrap_iterations)
+BSTM2_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  t_BSTM = BSTM (testing_ffs, testing_f0s, templates_lm[[i]], method=method2)
+
+  winners = get_winners (t_BSTM)
+  BSTM2_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+
+  posteriors = get_posterior(t_BSTM)
+  BSTM2_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  BSTM2_intended_loglikelihoods[i] = model_likelihood(intended_phoneme,posteriors$df)
+}
+
+```
+
+
+```{r}
+save(BSTM2_loglikelihoods=BSTM2_loglikelihoods, 
+     BSTM2_intended_loglikelihoods = BSTM2_intended_loglikelihoods,
+     BSTM2_rmss=BSTM2_rmss,
+     file = "simulation_data/BSTM2_sim.RData")
+```
+
+
+## PSTM bootstrapping 
+
+
+### Method 6  
+
+
+```{r}
+PSTM6_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM6_intended_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM6_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  t_PSTM = PSTM (testing_ffs, testing_f0s, templates_lm[[i]])
+
+  winners = get_winners (t_PSTM)
+  PSTM6_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+  
+  posteriors = get_posterior(t_PSTM)
+  PSTM6_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+  
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  PSTM6_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, posteriors$df)
+
+}
+
+```
+
+
+```{r}
+save(PSTM6_loglikelihoods = PSTM6_loglikelihoods, 
+     PSTM6_intended_loglikelihoods = PSTM6_intended_loglikelihoods,
+     PSTM6_rmss = PSTM6_rmss,
+     file = "simulation_data/PSTM6_sim.RData")
+```
+
+
+### Method 3  
+
+```{r}
+PSTM3_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM3_intended_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM3_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  t_PSTM = PSTM (testing_ffs, testing_f0s, templates_lm[[i]], method=method3)
+
+  winners = get_winners (t_PSTM)
+  PSTM3_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+
+  posteriors = get_posterior(t_PSTM)
+  PSTM3_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+ 
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  PSTM3_intended_loglikelihoods[i] = model_likelihood(intended_phoneme,posteriors$df)
+}
+
+```
+
+
+```{r}
+save(PSTM3_loglikelihoods=PSTM3_loglikelihoods, 
+     PSTM3_intended_loglikelihoods = PSTM3_intended_loglikelihoods,
+     PSTM3_rmss=PSTM3_rmss,
+     file = "simulation_data/PSTM3_sim.RData")
+```
+
+
+
+### Method 2  
+
+```{r}
+PSTM2_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM2_intended_loglikelihoods = rep(0,bootstrap_iterations)
+PSTM2_rmss = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 50 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  testing = t_dat$testing
+  
+  testing_ffs = log(testing[,c(4:9)])
+  testing_classifications = testing[,15:26]
+  testing_f0s = log(testing$f0)
+  
+  t_PSTM = PSTM (testing_ffs, testing_f0s, templates_lm[[i]], method=method2)
+
+  winners = get_winners (t_PSTM)
+  PSTM2_rmss[i] = sqrt(mean((as.numeric(winners$psi_hat ) - testing$psi)^2))
+
+  posteriors = get_posterior(t_PSTM)
+  PSTM2_loglikelihoods[i] = model_likelihood(testing_classifications,posteriors$df)
+
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  PSTM2_intended_loglikelihoods[i] = model_likelihood(intended_phoneme,posteriors$df)
+}
+
+```
+
+
+```{r}
+save(PSTM2_loglikelihoods=PSTM2_loglikelihoods, 
+     PSTM2_intended_loglikelihoods = PSTM2_intended_loglikelihoods,
+     PSTM2_rmss=PSTM2_rmss,
+     file = "simulation_data/PSTM2_sim.RData")
+```
+
+
+
+
+## Figures
+
+```{r}
+load ("simulation_data/hz_sim.RData")
+load ("simulation_data/hz_log_sim.RData")
+load ("simulation_data/PSTM1_sim.RData")
+load ("simulation_data/PSTM1_single_sim.RData")
+load ("simulation_data/BSTM6_sim.RData")
+load ("simulation_data/BSTM3_sim.RData")
+load ("simulation_data/BSTM2_sim.RData")
+load ("simulation_data/PSTM6_sim.RData")
+load ("simulation_data/PSTM3_sim.RData")
+load ("simulation_data/PSTM2_sim.RData")
+```
+
+
+
+```{r figure4-compact, eval=TRUE}
+#| fig-height: 4
+#| fig-width: 10
+#| echo: false
+#| cache: true
+#| fig-dpi: 600
+#| id: fig-bootboxplot-2
+#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and BSTM method 6 across bootstrap iterations. Points indicate bootstrap means, intervals indicate lower 95% quantiles. Log-likelihoods for the single-trial application of naive method 1 were more than an order of magnitude lower than all other log-likelihoods and thus do not show. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners' responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$. This leaves open which approach best predicts *listeners'* $\\hat{\\psi}_s$ (to which we have no access here). Methods without normalizatin (Hz and log-Hz) are not shown since they do not provide estimates of $\\psi_s$."
+
+######
+
+loglik = cbind(hz_loglikelihoods,hz_log_loglikelihoods,
+               PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
+               PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
+               BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
+
+loglik_intended = cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
+               PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
+               PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
+               PSTM6_intended_loglikelihoods,
+               BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
+               BSTM6_intended_loglikelihoods)
+
+rmss = cbind(lm_single_rmss, 
+             PSTM2_rmss,PSTM3_rmss,PSTM6_rmss,
+             BSTM2_rmss,BSTM3_rmss,BSTM6_rmss)
+
+
+loglik_diffs = (loglik - loglik[,10])
+loglik_intended_diffs = (loglik_intended - loglik_intended[,10])
+rmss_diffs = (rmss - rmss[,7])
+
+probs_interval_loglik <- c(0.0, 0.95)
+probs_interval_rms <- c(0.05, 1)
+
+par (mfcol = c(1,3), mar = c(4,.2,.1,.2), oma = c(0.1,7.1,0.2,0.1))
+
+labels = c("Hz","log-Hz","PSTM1\n(balanced data)","PSTM1\n(single trial)",
+           "PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
+
+bmmb::brmplot (brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik), 
+               labels = labels, ylab = "",line=FALSE,
+               xlab = "Difference in model likelihood (compared to BSTM6)",
+               xlim = c(-1500,0), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+abline (v=0,lty=3,col="black")
+legend("bottomleft", legend="(a)", bty="n", cex=1.5)
+
+
+bmmb::brmplot (brms::posterior_summary(loglik_intended_diffs, 
+                                       prob = probs_interval_loglik), 
+               labels = "", ylab = "",line=FALSE,
+               xlab = "Difference in model likelihood (compared to BSTM6)",
+               xlim = c(-2000,2000), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+abline (v=0,lty=3,col="black")
+legend("bottomleft", legend="(b)", bty="n", cex=1.5)
+
+
+par (mar = c(4,.2,9,.2))
+
+labels = c("PSTM1\n(single trial)","PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
+
+tmp = brms::posterior_summary(rmss, prob = probs_interval_rms)
+tmp_diff = brms::posterior_summary(rmss_diffs, prob = probs_interval_rms)
+
+bmmb::brmplot (tmp, labels = "", ylab = "", xlab = "RMS error in ψ estimation",
+               line=FALSE,
+               xlim = c(0,.15), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+abline (v=0,lty=3,col="black")
+legend("bottomright", legend="(c)", bty="n", cex=1.5)
+```

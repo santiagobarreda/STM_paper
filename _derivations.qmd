@@ -1,0 +1,346 @@
+---
+title: "Derivation of Analytic solution for the PSTM"
+authors: Santiago Barreda and T. Florian Jaeger
+format: docx
+math: true
+---
+
+# Introduction
+
+This document will outline the specific implementation of method 6 described in the main paper, along with the derivation of the analytic estimation of the properties of the posterior distribution of $\psi_s$ given the formant pattern and the vowel category. The document below relies on the following notational conventions:
+
+  * $\psi_s$: the speaker-dependent scaling parameter
+  * $\vec{G}$: the log-transformed formant pattern, i.e. $\vec{G}=\log([F1, F2, F3,...])$
+  * $\vec{\hat{N}}$: the normalized formant pattern
+  * $\vec{\hat{\mu}_\mathrm{v}}$: the mean of the normalized formant pattern for a given vowel category
+  * $\hat{\Sigma}_\mathrm{v}$: the covariance matrix of the normalized formant pattern for a given vowel category
+  * $\hat{\mu}_{\psi_s}$: the mean of the prior distribution of $\psi_s$
+  * $\hat{\sigma}_{\psi_s}$: the standard deviation of the prior distribution of $\psi_s$
+  * $V$: the number of vowel categories
+  * $g0$: the log-transformed $f0$ value
+  * $\hat{a}_{g0}$: the intercept of the regression line for $f0$ estimation given $\psi_s$
+  * $\hat{b}_{g0}$: the slope of the regression line for $f0$ estimation given $\psi_s$
+  * $\hat{\sigma}_{g0}$: the standard deviation of the regression of $g0$ estimation given $\psi_s$
+  * $K$: the number of formants
+  * $S$: the number of speakers
+  * $G_{k,\text{v},s}$: the $k$-th formant value for the $s$-th speaker in the $v$-th vowel category
+  * $N_{k,\text{v},s}$: the normalized $k$-th formant value for the $s$-th speaker in the $\text{v}$-th vowel category
+  * $\hat{\mu}_{k\text{v}}$: the mean of the $k$-th normalized formant value for the $\text{v}$-th vowel category
+  * $\hat{\Sigma}_{\text{v},jk}$: the covariance of the $j$-th and $k$-th formant values for the $\text{v}$-th vowel category
+
+
+# Parameter Estimation
+
+Here we provide a basic approach to estimation of the relevant parameters. In most cases, more sophisticated techniques may be employed. 
+
+$\psi_s$ may be estimated for each speaker as in:
+
+$$
+\hat{\psi}_s = \frac{1}{(K \cdot V)}  \sum_{\text{v}=1}^{V} \sum_{k=1}^{K} G_{k,\text{v},s}
+$$ {#eq-psi-s}
+
+It is very important that the number of tokens be balanced across vowel categories. If a lack of balanced exists, the average of each category can be used in @eq-psi-s for each speaker. See @b18 for an extended discussion.
+
+Given an estimate of $\psi_s$, the normalized formant pattern may be estimated as in:
+
+$$
+\vec{\hat{N}} = \vec{G} - \hat{\psi}_s
+$$ {#eq-normalized}
+
+The mean of the normalized formant pattern for each vowel category may be estimated using these normalized vectors as in:
+
+$$
+\vec{\hat{\mu}} = 
+[\hat{\mu}_{1\text{v}},\, \hat{\mu}_{2\text{v}},\, \hat{\mu}_{3\text{v}}] 
+= \hat{\mu}_{k\text{v}} = \frac{1}{S} \sum_{s=1}^{S} N_{k,\text{v},s} 
+$${#eq-mu-vec}
+
+Again, balance is important. If the number of tokens is not balanced across vowel speakers, the average of each category can be used in @eq-normalized for each speaker.
+
+We will discuss estimation of the template covariance matrices in the pooled and category-specific cases. In both situations we assume balance across vowels and listeners, and no missing observations. The more complicated case of covariance estimation in the presence of missing or unbalanced data is left as an exercise for the reader. The covariance matrix of the normalized formant pattern for each vowel category may be estimated as in:
+<!-- notational weirdness here, v has to go next to sigma to be consistent with paper. -->
+$$
+\hat{\Sigma}_{\text{v},jk} = \frac{1}{S-1} \sum_{s=1}^{S} \left( N_{j,\text{v},s} - \hat{\mu}_{j,\text{v}} \right) \left( N_{k,\text{v},s} - \hat{\mu}_{k,\text{v}} \right)
+$$ {#eq-sigma-unpooled}
+
+And we can estimate the pooled covariance across all categories as in:
+
+$$
+\hat{\Sigma}_{jk} = \frac{1}{(S \cdot V-1)} \sum_{\text{v}=1}^{V} \sum_{s=1}^{S} \left( N_{j,\text{v},s} - \hat{\mu}_{j,\text{v}} \right) \left( N_{k,\text{v},s} - \hat{\mu}_{k,\text{v}} \right)
+$${#eq-sigma-pooled}
+
+The prior mean of $\psi_s$ can be estimated from any large dataset as in:
+
+$$
+\hat{\mu}_{\psi_s} = \frac{1}{S} \sum_{s=1}^{S} \hat{\psi}_s
+$${#eq-psi-mu}
+
+and the prior standard deviation of $\psi_s$ can be estimated as in:
+
+$$
+\hat{\sigma}_{\psi_s} = \sqrt{\frac{1}{S-1} \sum_{s=1}^{S} (\hat{\psi}_s - \hat{\mu}_{\psi_s})^2}
+$${#eq-psi-sigma}
+
+Obviously, the mean and standard deviation estimates will depend heavily on the sorts of speakers included in the data. For estimates that reflect the human population in general, speakers of a wide range of sizes are needed. 
+
+The intercept and slope of the regression line for $f0$ estimation given $\psi_s$ can be estimated using the $\psi_s$ estimates for each speaker and the g0 values corresponding to these speakers in the database. For a vector `psi` of $\psi_s$ estimates for the speaker who produced each token, and a vector `g0` of corresponding g0 values for each token, the intercept and slope can be estimated as in:
+
+```{r, eval = FALSE}
+lm (g0 ~ psi)
+```
+
+The resulting model intercept, slope, and residual error provide estimates of $\hat{a}_{g0}$, $\hat{b}_{g0}$, and $\hat{\sigma}_{g0}$, respectively.
+
+# Derivation of Method 6 Posterior Distributions
+
+According to implementation described in the main article, the posterior probability related to method 6 is equal to the product of the densities in @eq-e01.
+
+<!-- hats on sigma and mu of psi prior as well right? if so need to update paper
+and on multivariate mean vector and Sigma
+-->
+
+$$
+\begin{align}
+P(\vec{G} | \text{v}, \psi_{s}) \cdot P(g0 | \psi_s) \cdot P(\psi_s) 
+\cdot P(\text{v}) = \\ 
+\text{MVN} ( \vec{N} \, | \, \vec{\hat{\mu}_\mathrm{v}},
+\hat{\Sigma}_\mathrm{v}) \cdot \\
+N(\hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s, \hat{\sigma}_{g0}) \cdot \\
+N(\hat{\mu}_{\psi_s}, \hat{\sigma}_{\psi_s}) \cdot \\
+P(\text{v})
+\end{align}
+$$ {#eq-e01}
+
+<!-- I think the g0 subscript had a hat to make it clear that these parameters related to f0 estimation, rather than f0 itself. this is how parameters are named in the STM code. 
+-->
+
+These are: the likelihood of the formant pattern given the vowel category and value of $\psi_s$, the probability of observing a given log-transformed $f0$ (i.e. $g0$) value given $\psi_s$, the prior distribution of $\psi_s$, and the prior probability of the vowel. If the prior probability of the vowel is assumed to be equal across all $V$ categories, this can be implemented as in:
+
+$$
+\begin{align}
+P(\vec{G} | \text{v}, \psi_{s}) \cdot P(g0 | \psi_s) \cdot P(\psi_s) \cdot P(\text{v})
+= 
+\\ 
+((2\pi)^{k/2} |\hat{\Sigma_\mathrm{v}}|^{1/2})^{-1} \exp \left( 
+-1/2 \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})^T \cdot (\hat{\Sigma}_\mathrm{v})^{-1} \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})
+\right) \cdot 
+\\
+\frac{1}{\hat{\sigma}^2_{g0} \sqrt{2\pi}} \,\exp \left( -1/2 \cdot (g0 - \hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s)^2 / \hat{\sigma}_{g0}^2 \right) \cdot \\
+\frac{1}{\hat{\sigma}_{\psi_s}^2 \sqrt{2\pi}} \, \exp \left( -1/2 \cdot (\psi_s - \hat{\mu}_{\psi_s})^2 / \hat{\sigma}_{\psi_s}^2 \right) \cdot \\
+1/V
+\end{align}
+$$ {#eq-e02}
+
+Where $\vec{N}$ represents the normalized formant pattern. To find the value of $\psi_s$ that maximizes the value of this product, we rely on two useful properties of normal distributions: the product of two normal distributions is a normal distribution, and the logarithm of a normal distribution is a quadratic function. As a result, the derivative of the logarithm of this equation with respect to $\psi_s$ will be a line, and setting this line equal to zero will give us the value of $\psi_s$ that maximizes the posterior probability. We explain this process in detail in the following sections, for now we jump to the result. The derivative (with respect to $\psi_s$) of the logarithm of @eq-e02 is shown in @eq-e03.
+
+$$
+\begin{align}
+\frac{\partial}{\partial \psi_s}
+\log \left( P(\vec{G} | \text{v}, \psi_{s,\text{v}}) \cdot P(g0 | \psi_s) \cdot P(\psi_s) \right) = \\ 
+\sum \left( \vec{N} \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) - \sum(\hat{\Sigma}_\mathrm{v}^{-1})
+\cdot \psi_s \cdot \\
+\left(\frac{g0  \cdot \hat{b}_{g0}}{\hat{\sigma}^2_{g0}} - \frac{\hat{a}_{g0} \cdot \hat{b}_{g0}}{\hat{\sigma}^2_{g0}} \right) - \frac{\hat{b}_{g0}^2}{\hat{\sigma}^2_{g0}} \cdot \psi_s \cdot \\
+\frac{\hat{\mu}_{\psi_s}}{\hat{\sigma}_{\psi_s}^2} - \frac{1}{\hat{\sigma}_{\psi_s}^2} \cdot \psi_s
+\end{align}
+$$ {#eq-e03}
+
+Each line above each contains a term that is multiplied by $\psi_s$ and a term that is independent of $\psi_s$. The terms in @eq-e03 can be rearranged to reflect a single line with an intercept equal to $\hat{a}_{\frac{\partial}{\partial \psi_s}}$ and a slope equal to $\hat{b}_{\frac{\partial}{\partial \psi_s}}$, as in @eq-e04.
+
+$$
+\begin{align}
+\frac{\partial}{\partial \psi_s}
+\log \left( P(\vec{G} | \text{v}, \psi_{s}) \cdot P(g0 | \psi_s) \cdot P(\psi_s) \right) = 
+\hat{a}_{\frac{\partial}{\partial \psi_s}} + \hat{b}_{\frac{\partial}{\partial \psi_s}} \cdot \psi_s \\
+\\
+\text{Where:}\\
+\hat{a}_{\frac{\partial}{\partial \psi_s}} = \sum \left( \vec{N} \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) + \left(\frac{g0  \cdot \hat{b}_{g0}}{\hat{\sigma}_{g0}^2} - \frac{\hat{a}_{g0} \cdot \hat{b}_{g0}}{\hat{\sigma}_{g0}^2} \right)  +  \frac{\hat{\mu}_{\psi_s}}{\hat{\sigma}_{\psi_s}^2}\\
+\hat{b}_{\frac{\partial}{\partial \psi_s}} = \sum(\hat{\Sigma}_\mathrm{v}^{-1}) + \frac{\hat{b}_{g0}^2}{\hat{\sigma}_{g0}^2} + \frac{1}{\hat{\sigma}_{\psi_s}^2}\psi_s \\
+\end{align}
+$$ {#eq-e04}
+
+Setting $0=\hat{a}_{\frac{\partial}{\partial \psi_s}} + \hat{b}_{\frac{\partial}{\partial \psi_s}} \cdot \psi_s$ and solving for $\psi_s$ (i.e. $\psi_s = -a/b$) gives the mean of the posterior of $\psi_s$, and $-1/\sqrt{b}$ gives its standard deviation. This value can then be used in @eq-e02 to find the posterior density for that value of $\psi_s$. 
+
+
+## The probability of the formant pattern given of the vowel category and $\psi_s$
+
+The multivariate normal density of the vowel category given the formant pattern and $\psi_s$ is presented in @eq-e04.
+
+$$
+\text{MVN}(\vec{\hat{\mu}_\mathrm{v}}, \hat{\Sigma}^\mathrm{v}) = \frac{1}{(2\pi)^{k/2} |\hat{\Sigma}_\mathrm{v}|^{1/2}} 
+\exp \left( 
+-1/2 \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})^T \cdot (\hat{\Sigma}_\mathrm{v})^{-1} \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})
+\right)
+$$ {#eq-e05}
+
+The multivariate normal density has only one part that depends on $\psi_s$; the rest are constants which won't matter once we take the derivative. The part that depends on $\psi_s$ is shown in @eq-e06.
+
+$$
+\begin{align}
+-1/2 \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})^T \cdot (\hat{\Sigma}_\mathrm{v})^{-1} \cdot (\vec{N} - \vec{\hat{\mu}_\mathrm{v}})
+\end{align}
+$$ {#eq-e06}
+
+Since $\vec{N} = \vec{G} - \vec{\psi_s}$ in the log-mean framework, we can rewrite @eq-e06 as in:.
+
+$$
+\begin{align}
+-1/2 \cdot (\vec{G} - \vec{\psi_s} - \vec{\hat{\mu}_\mathrm{v}})^T \cdot \hat{\Sigma}_\mathrm{v}^{-1} \cdot (\vec{G} - \vec{\psi_s} - \vec{\hat{\mu}_\mathrm{v}})
+\end{align}
+$$ {#eq-e07}
+
+To get the derivative of @eq-e07 with respect to $\psi_s$ we break it up into inner and outer functions, i.e. $h(g(x))$, and apply the chain rule. We define the outer ($h(x)$) and inner ($g(\psi_s)$) functions as in @eq-e08 and @eq-e09.
+
+$$
+\begin{align}
+h(x) = -1/2 \cdot x^\text{T} \cdot \hat{\Sigma}_\mathrm{v}^{-1} \cdot x
+\end{align}
+$$ {#eq-e08}
+
+$$
+\begin{align}
+g(\psi_s) = x = \vec{G} - \vec{\psi_s} - \vec{\hat{\mu}_\mathrm{v}}
+\end{align}
+$$ {#eq-e09}
+
+The derivative of $h(x)$ with respect to $x$ is given in @eq-e11, and the derivative of $g(\psi_s)$ with respect to $\psi_s$ is given in @eq-e12.
+
+$$
+h'(x) = -x \cdot \hat{\Sigma}_\mathrm{v}^{-1}
+$$ {#eq-e11}
+
+$$
+g'(\psi_s) = -I = [ -1, \; -1, \; -1 ]
+$$ {#eq-e12}
+
+Completing the chain rule, we multiply the derivative of the outer function $h(\cdot)$ and the inner function $g(\cdot)$ as shown in @eq-e13.
+
+$$
+\begin{align}
+h'(x) \cdot g'(\psi_s) = \left( -x \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) \cdot -I
+\end{align}
+$$ {#eq-e13}
+
+The product of these is shown in @eq-e14, and due to the properties of matrix multiplication (since $I = [1, \; 1, \; 1]$), this reduces as in @eq-e15.
+
+$$
+\begin{align}
+-(\vec{G} - \vec{\psi_s} - \vec{\hat{\mu}_\mathrm{v}}) \cdot \hat{\Sigma}_\mathrm{v}^{-1} \cdot -I
+\end{align}
+$$ {#eq-e14}
+
+$$
+\begin{align}
+\sum \left( (\vec{G} - \vec{\psi_s} - \vec{\hat{\mu}_\mathrm{v}}) \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right)
+\end{align}
+$$ {#eq-e15}
+
+Which we can rearrange to arrive at the the organization presented in @eq-03.
+
+$$
+\begin{align}
+\sum \left( (\vec{G} - \vec{\hat{\mu}_\mathrm{v}}) \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) - (\psi_s \cdot \hat{\Sigma}_\mathrm{v}^{-1}) \; = \\
+\sum \left( (\vec{G} - \vec{\hat{\mu}_\mathrm{v}}) \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) - \psi_s \cdot ([1, 1, 1] \cdot \hat{\Sigma}_\mathrm{v}^{-1}) = \\
+\sum \left( (\vec{G} - \vec{\hat{\mu}_\mathrm{v}}) \cdot \hat{\Sigma}_\mathrm{v}^{-1} \right) - \psi_s \cdot \sum(\hat{\Sigma}_\mathrm{v}^{-1}) \end{align}
+$$
+
+## The prior distribution of $\psi_s$
+
+The log density of the normal distribution of $\psi_s$ is shown in @eq-e16.
+
+$$
+\begin{align}
+\log \left( N(\psi_s | \hat{\mu}_{\psi_s}, \hat{\sigma}_{\psi_s}) \right) = \log \left (
+\frac{1}{\hat{\sigma}_{\psi_s}^2 \sqrt{2\pi}} \, \exp \left( -1/2 \cdot (\psi_s - \hat{\mu}_{\psi_s})^2 / \hat{\sigma}_{\psi_s}^2 \right )
+ \right )
+\end{align}
+$$ {#eq-e16}
+
+This has only one part that depends on $\psi_s$, isolated and expanded in @eq-e17.
+
+$$
+\begin{align}
+-1/2 \cdot (\psi_s - \hat{\mu}_{\psi_s}) ^ 2  / \hat{\sigma}_{\psi_s}^2 =
+     - (\psi_s^2 - 2 \psi_s \hat{\mu}_{\psi_s} + \hat{\mu}_{\psi_s}^2) / (2 \hat{\sigma}_{\psi_s}^2)
+\end{align}
+$$ {#eq-e17}
+
+The derivative of this with respect to $\psi_s$ is a line with a slope and an intercept, as shown in @eq-e18.
+
+$$
+\begin{align}
+-(2 \psi_s - 2 \hat{\mu}_{\psi_s}) / 2 \hat{\sigma}_{\psi_s}^2 = (\hat{\mu}_{\psi_s} - \psi_s) / \hat{\sigma}_{\psi_s}^2 = 
+\frac{\hat{\mu}_{\psi_s}}{\hat{\sigma}_{\psi_s}^2} - \frac{1}{\hat{\sigma}_{\psi_s}^2}\psi_s
+\end{align}
+$$ {#eq-e18}
+
+## The probability of $g0$ given $\psi_s$
+
+The log density of $N(g0 | \hat{\mu}_{g0}, \hat{\sigma}_{g0}^2)$ has only one part that depends on $\psi_s$ (the rest are constants which won't matter once we take the derivative). This is presented in @eq-e19.
+
+$$
+-1/2 \cdot (g0 - \hat{\mu}_{g0})^2  / \hat{\sigma}_{g0}^2
+$$ {#eq-e19}
+
+Since for us $\mu_{g0} = \hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s$, we can rewrite @eq-e18 as shown in @eq-e20.
+
+$$
+-1/2 \cdot (g0 - (\hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s))^2  / \hat{\sigma}_{g0}^2
+$$ {#eq-e20}
+
+We can use the chain rule to find the derivative. The outer and inner functions are shown in @eq-e21.
+
+$$
+\begin{align}
+h(x) = -1/2 \cdot (g0 - x)^2 / \hat{\sigma}_{g0}^2 \\ 
+g(\psi_s) = \hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s
+\end{align}
+$$ {#eq-e21}
+
+The derivative of $h(x)$ with respect to $x$ is shown in @eq-e22, which can be presented as in @eq-e23.
+
+$$
+h'(x) = (g0 - x) / \hat{\sigma}_{g0}^2 = (g0 - (\hat{a}_{g0} + \hat{b}_{g0} \cdot \psi_s)) / \hat{\sigma}_{g0}^2
+$$ {#eq-e22}
+
+$$
+h'(x) = \frac{g0}{\hat{\sigma}_{g0}^2} - \frac{\hat{a}_{g0}}{\hat{\sigma}_{g0}^2} - \frac{\hat{b}_{g0}}{\hat{\sigma}_{g0}^2}
+\cdot \psi_s
+$$ {#eq-e23}
+
+The derivative of $g(\psi_s)$ with respect to $\psi_s$ is shown in @eq-e24.
+
+$$
+g'(\psi_s) = \hat{b}_{g0}
+$$ {#eq-e24}
+
+We multiply the derivative of the outer function $h$ and the inner function $g$ to complete the chain rule, as in @eq-e25.
+
+$$
+h'(g(x)) \cdot g'(x) = (\frac{g0}{\hat{\sigma}_{g0}^2} - \frac{\hat{a}_{g0}}{\hat{\sigma}_{g0}^2} - \frac{\hat{b}_{g0}}{\hat{\sigma}_{g0}^2}
+\cdot \psi_s) \cdot (\hat{b}_{g0})
+$$ {#eq-e25}
+
+The elements composing the intercept, which do not multiply by $\psi_s$, are grouped in parentheses. This results in the organization shown in @eq-e26. 
+
+$$
+\left( \frac{g0  \cdot \hat{b}_{g0}}{\hat{\sigma}_{g0}^2} - \frac{\hat{a}_{g0} \cdot \hat{b}_{g0}}{\hat{\sigma}_{g0}^2} \right) - \frac{\hat{b}_{g0}^2}{\hat{\sigma}_{g0}^2} \cdot \psi_s
+$$ {#eq-e26}
+
+# Calculating the integral of the likelihood function and posterior distribution
+
+To find the integral of the posterior distribution (or the likelihood function), we rely on the relationship between the standard deviation, the peak density, and the integral of Gaussian-shaped functions. The peak density value of a Gaussian-shaped function, i.e. where $x = \mu$ is given in @eq-e27.
+
+$$
+\begin{align}
+\mathcal{D}_{N(\cdot)}  = \frac{1}{\sqrt{2 \pi \hat{\sigma}^2}} 
+\end{align}
+$$ {#eq-e27}
+
+The integral of a Gaussian probability distribution along the number line will always be 1. However, Gaussian-shaped likelihood functions can have integrals much smaller than or greater than 1. When this occurs, the the maximum density along this curve ($\mathcal{D}_{f(\cdot)}$) can be very different from the peak density of a Gaussian probability distribution ($\mathcal{D}_{N(\cdot)}$) with the same mean and variance. For example, if the peak density of the likelihood function is twice as high as the Gaussian distribution with the same mean and standard deviation, then we know that the likelihood function must have an integral twice as large as the equivalent probability distribution. Since probability distributions have integrals equal to one, this means that we can calculate the integral of Gaussian-shaped likelihoods and posterior distributions ($f(\cdot)$) as in @eq-e28.
+
+$$
+\begin{align}
+\int_{-\infty}^{\infty} f(x) dx =
+\frac{\mathcal{D}_{f(x)}}{\mathcal{D}_{N(x)}}  = \mathcal{D}_{f(x)} \cdot \sqrt{2 \pi \hat{\sigma}^2}
+\end{align}
+$$ {#eq-e28}

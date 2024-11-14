@@ -1,0 +1,320 @@
+---
+title: "Supplemental Online Materials: The PSTM R package"
+format: docx
+---
+
+# Introduction
+
+This package is meant to facilitate the simulation of vowel perception and the creation of related visualizations. First install the package if necessary, and load it. The finalized version of the package will be available on CRAN, it is only on GitHub for now. 
+
+```{r install-non-CRAN-libraries, include = F}
+if (!("STM" %in% installed.packages())) 
+  devtools::install_github("santiagobarreda/STM")
+library (STM)
+```
+
+# Examples of Usage
+
+## Data setup
+
+We load the STM package and the `h95_data` (Hillenbrand et al. 1995, henceforth H95) dataset. This is the complete data asociated with the H95 paper that was once hosted on James Hillenbrand's academic website, now down (and distributed with his permission). The data loaded below contains: formant data at a 'stable part' of the vowel, formant values at different time points, listener classifications for each judgement, and two estimates of $\hat{\psi}_s$: `psi_1` (based on the stable part of the formants) and `psi_2` (based on measurements at 20% and 80%). 
+
+
+```{r, eval = FALSE} 
+data (h95_data)
+head (h95_data)
+```
+
+We first impute missing values in the formant data using the `impute_NA` function. This function uses a linear model to impute, and optionally adds error to estimates (not used here but useful when using resampling methods bootstrapping). 
+
+```{r}
+h95_data[,c(10:12,28:30)] = 
+  impute_NA (log(h95_data[,c(10:12,28:30)]), h95_data$speaker, h95_data$vowel)
+```
+
+We will focus on the 20% and 80% time points, for the first 3 formants. We collect the formants, f0, psis, classification information, and category names. 
+
+```{r}
+ffs = log(h95_data[,c(10:12,28:30)])
+f0s = log(h95_data[,3])
+psis = h95_data$psi_2
+
+data(h95_classifications)
+classifications = h95_classifications
+vs = colnames (classifications)
+```
+
+We normalize the log-transformed formant data using the `normalize` function, which employs the regression-based method of log-mean normalization outlined in Barreda and Nearey (2018). 
+
+```{r, eval = FALSE} 
+nffs = normalize (h95_data[,c(10:12,28:30)],h95_data$speaker,h95_data$vowel)
+```
+
+And calculate templates for the dialect based on the available data. Templates contains category means, covariance matrices, and precision matrices. 
+
+```{r, eval = TRUE} 
+template = create_template (ffs-psis, h95_data$vowel,shared_covar = FALSE)
+```
+
+## Example Analysis
+
+If $\psi_s$ is known, formants may be normalized as usual and the `STM` function may be used. In addition, this function may be used on templates trained on unnormalized data for classification without normalization. The `STM` function calculates posterior probabilities for each category based on the template and token acoustic properties. It returns a matrix of posterior probabilities, one row for each observation and one column for each candidate category. 
+
+```{r, eval = FALSE} 
+STM (nffs[1,1:6], template = template)
+```
+
+This function works by calculating the log density of the formant vector for each category, and then calculating posteriors based on these densities. `correctOUflow.internal` is a function that changes 0 and 1 to `.Machine$double.xmin` and .9999999 respectively, in order to avoid problems when calculating the log likelihood.
+
+```{r}
+STM
+```
+
+
+
+The `BSTM` function takes in a formant vector, an (optional depending on the method) f0 value, and a dialectal template. It returns information regarding the posterior probabilities for each category, the likelihoods, and the priors. 
+
+```{r, eval = TRUE} 
+BSTM (ffs[1,],f0s[1], template = template)
+```
+
+Alternatively, the function can be run on a matrix of formant vectors, and a vector of f0 values. In this case, a list of results is returned as an `STM_output_list object`. 
+
+```{r, eval = TRUE} 
+analysis = BSTM (ffs[1:5,],f0s[1:5], template = template)
+
+analysis
+```
+
+Below, we show the results for the fifth observation in the dataset.
+
+```{r, eval = TRUE} 
+analysis[[5]]
+```
+
+The `get_winners` function returns the category with the highest posterior probability for each observation, and the corresponding estimate of $\hat{\psi}_s$. 
+
+```{r}
+get_winners(analysis)
+```
+
+And the `get_posterior` function returns the posterior probability for each category for each observation. 
+
+```{r}
+get_posterior (analysis)
+```
+
+To use a different estimation method we use the `method` parameter in `BSTM` as shown below.
+
+```{r}
+BSTM (ffs[1,],f0s[1], template = template, method = method2)
+```
+
+Note that the prior information is set to `NA` because this method places no a priori constraints on values of $\hat{\psi}_s$.
+
+## Plotting
+
+The package contains plotting functions defined for the `STM_template` and `STM_output_list` objects. The `plot` function for the `STM_template` object plots the means of the formant values for each category, and ellipses enclosing one and two standard deviations. 
+
+```{r}
+plot (template)
+```
+
+The `plot` function for `STM_output` objects compares the prior probabilities of $\psi_s$, the likelihood of of the formant pattern given different values of $\psi_s$ and different vowel categories, and the posterior probabilities of $\psi_s$ for each category. 
+
+```{r}
+plot (analysis[[1]])
+```
+
+
+# Walkthrough of the the BSTM function
+
+We will describe the sequence of steps underlying the `BSTM` function, relying on the steps carried out in section @sec-setup. 
+
+The `BSTM` function takes in a formant vector, an (optional depending on the metho) f0 value, and a template. It returns information regarding the posterior probabilities for each category, the likelihoods, and the priors. 
+
+```{r, eval = FALSE} 
+BSTM (ffs[1,],f0s[1], template = template)
+```
+
+I am going to walk through the way this function works. `BSTM` and `PSTM` are basically a wrapper for the `method` functions in the `estimation_methods.R` file. The `method` functions are the ones that actually calculate the likelihoods and priors. `method6` implements the method 6 algorithm as seen below:
+
+```{r}
+method6
+```
+
+The other methods (2 and 3) include subsets of the process above, so I will not go through method6. First, the `estimate_likelihood` function is called for each category. This function calculates the log likelihood of the formant vector given the category mean and covariance. This is done using the method in Terry's notes which yields the mean and standard deviation. The density at the mean is calculated using the density function. We will in general collect: the mu, the sd, the peak (log) density.
+
+```{r}
+estimate_likelihood
+```
+
+We then calculate the joint prior pf $\psi_s$ and f0 using the `estimate_f0_psi_prior` function. This function calculates the prior for the f0 value given the psi value. The mean and sd are calculated the way described by our derivation. The main addition is that we find the value of the density at the prior mean. 
+
+```{r}
+estimate_f0_psi_prior
+```
+
+We also call the `combine_gaussians` function which combines gaussian curves of any given peak density as follows:
+
+```{r}
+combine_gaussians
+```
+
+Finally (in terms of important steps) we call the `find_posterior` function to combine our priors and likelihoods. This functions simply combines the priors and likelihoods and then scales the posterior probabilities. by calling `scale_posterior`.
+
+```{r}
+find_posterior
+```
+
+The `scale_posterior` function scales the posterior probabilities to sum to 1. This is done by integration of the posterior distributions of $\psi_s$ for each category and summing across all categories (if `type=BSTM`), or by exponentiating and summing posterior densities (if `type=PSTM`).
+
+```{r}
+scale_posterior
+```
+
+# Comparison to Grid Search parameter estimation
+
+As a sanity check we will compare the output of the `BSTM` function to the values we can calculate more directly using a grid search method. We use the same parameters as in methods 2, 3 and 6, and use the first observation from our data (any other can be used):
+
+```{r}
+tmp_ffs = ffs[1,]
+tmp_f0 = f0s[1]
+
+psis = seq(6.8,7.6,.0001)
+PSI_prior_mean = 7.233
+PSI_prior_sd = 0.1284
+f0_hat_sd = 0.1327
+f0_hat_intercept = -10.32
+f0_hat_slope = 2.145
+```
+
+To estimate the method 6 prior:
+
+```{r}
+# psi prior normal density
+psiprior = dnorm (psis,PSI_prior_mean,PSI_prior_sd)
+
+# predicted f0 for each psi
+f0_hat = f0_hat_intercept + f0_hat_slope*psis
+
+# density of f0 given psi
+f0_given_psi = dnorm (tmp_f0, f0_hat, f0_hat_sd)
+
+# joint density of f0|psi and psi
+prior = f0_given_psi * psiprior
+```
+
+And likelihood:
+
+```{r}
+# matrix of formant vector, repeated
+formant_matrix = matrix (unlist(tmp_ffs),length(psis),6,byrow=TRUE)
+
+# matrix of candidate psis, repeated across columns
+psi_matrix = matrix (unlist(psis),length(psis),6)
+
+# for each category, density of pattern - psi candidate
+v_likelihoods = matrix (0,length(psis),12)
+for (i in 1:12)
+  v_likelihoods[,i] = 
+  dmvnorm_fast(formant_matrix - psi_matrix, 
+               unlist(template$means[i,]),
+               template$covariance[[i]])
+```
+
+
+The posterior (before scaling) is the product of the likelihood and the prior:
+
+```{r}
+posterior = v_likelihoods * matrix (prior,length(psis),12)
+```
+
+We numerically estimate the integral of all posteriors and divide the densities by this number to scale the total integral across all categories to 1:
+
+```{r}
+integrals = rep(0,12)
+for (i in 1:12) integrals[i] = integrate_numerical (psis, posterior[,i])
+
+posterior = posterior / sum(integrals)
+```
+
+And confirm that the total integral across categories is now 1:
+
+```{r}
+integrals_posterior = rep(0,12)
+for (i in 1:12) integrals_posterior[i] = integrate_numerical (psis, posterior[,i])
+sum (integrals_posterior)
+```
+
+We will compare to the output of the BSTM function:
+
+```{r}
+BSTM_output = BSTM (tmp_ffs, tmp_f0, template = template)$df
+t(BSTM_output[1,])
+```
+
+The posterior mean corresponds to the MAP psi value:
+
+```{r}
+BSTM_output[1,'posterior_mu']
+psis[which.max(posterior[,1])]
+```
+
+the posterior probability corresponds well to the numerically estimated integral:
+
+```{r}
+BSTM_output[1,'posterior_probability']
+integrate_numerical(psis, posterior[,1])
+```
+
+The posterior sd corresponds to what we can estimate using the second derivative of the posterior density:
+
+```{r}
+log_posterior <- log(posterior[,1])
+log_posterior_dx = diff(log_posterior) / diff(psis)
+log_posterior_dx_dx = mean (diff(log_posterior_dx) / diff(psis[-1]))
+
+
+BSTM_output[1,'posterior_sd']
+sqrt (-1/log_posterior_dx_dx)
+```
+
+and the maximum posterior log density also corresponds to our estimated value:
+
+```{r}
+BSTM_output[1,'posterior_density']
+log(max(posterior[,1]))
+```
+
+We can do the same estimates for our prior, seeing that these match our function outputs:
+
+```{r}
+unlist(BSTM_output[1,9:11])
+
+psis[which.max(prior)]
+
+log_prior <- log(prior)
+log_prior_dx = diff(log_prior) / diff(psis)
+log_prior_dx_dx = mean (diff(log_prior_dx) / diff(psis[-1]))
+sqrt (-1/log_prior_dx_dx)
+
+log(max(prior))
+```
+
+and for our likelihood:
+
+```{r}
+unlist(BSTM_output[1,6:8])
+
+psis[which.max(v_likelihoods[,1])]
+
+log_likelihood <- log(v_likelihoods[,1])
+log_likelihood_dx = diff(log_likelihood) / diff(psis)
+log_likelihood_dx_dx = mean (diff(log_likelihood_dx) / diff(psis[-1]))
+sqrt (-1/log_likelihood_dx_dx)
+
+log(max(v_likelihoods[,1]))
+```
+
+Q.E.D.!
