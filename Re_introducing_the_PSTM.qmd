@@ -12,8 +12,10 @@ math: true
 
 ```{r, include=F}
 if (!("devtools" %in% installed.packages())) install.packages("devtools")
-if (!("STM" %in% installed.packages()))
+if (!("STM" %in% installed.packages())) {
   devtools::install_github("santiagobarreda/STM")
+  devtools::install_github("santiagobarreda/bmmb")
+}
 ```
 
 ```{r, include=F}
