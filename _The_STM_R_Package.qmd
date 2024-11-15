@@ -10,7 +10,6 @@ This package is meant to facilitate the simulation of vowel perception and the c
 ```{r install-non-CRAN-libraries, include = F}
 if (!("STM" %in% installed.packages())) 
   devtools::install_github("santiagobarreda/STM")
-library (STM)
 ```
 
 # Examples of Usage
@@ -21,6 +20,7 @@ We load the STM package and the `h95_data` (Hillenbrand et al. 1995, henceforth 
 
 
 ```{r, eval = FALSE} 
+library (STM)
 data (h95_data)
 head (h95_data)
 ```
