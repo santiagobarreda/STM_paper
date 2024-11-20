@@ -222,7 +222,7 @@ c :=  \underset{\text{v}}{\arg\max} \left[ \hat{\psi}_{s,\text{v}} \right]
 \end{align}
 $$ {#eq-criterion-psi-and-vowel}
 
-## Method 2: Unreatricted optimization of $\psi_s$
+## Method 2: Unrestricted optimization of $\psi_s$
 
 Method 2 spells out @eq-posterior-psi as @eq-method2, assuming that listeners' prior expectations about $\psi_s$ correspond to a uniform distribution ($\text{U}$) such that any value of $\psi_s$ is equally plausible. 
 
@@ -334,7 +334,7 @@ text (psi11[1], 9, v_means_log[11,1], col=cols[v_densities_to_make[4]], cex=3)
 ```
 
 
-## Method 3: Informative marginal expectations about $\psi_s$
+## Method 3: Informative expectations about $\psi_s$
 
 Method 3 (@eq-method3) introduces stronger constraints on listeners' prior expectations for $\psi_s$ by assuming that  $\psi_s$ is normally distributed across speakers, with a mean $\mu_{\psi_s}$ and standard deviation $\sigma_{\psi_s}$ based on the $\psi_s$ that the listener previously observed across speakers. This means that values of $\hat{\psi}_{s,\text{v}}$ that are closer to the population mean will be considered more generally plausible by that listener.
 
@@ -645,7 +645,7 @@ Our bootstrap simulations confirm that *all* of the incremental methods proposed
 
 In future work we plan to expand evaluation of the BSTM in three ways. First, here we evaluated 'single-shot' implementations of methods 2, 3, and 6. That is, we did not incrementally accumulate information about $\psi_s$ across trials. For data like those in @h95, where listeners' rarely hear speech from the same talker for multiple trials in a row, this is likely an acceptable simplifying assumption. However, the single-shot implementations considered here might well underestimate listeners' ability to integrate information across observations from the same talker. In future work, we thus plan to extend these methods to incrementally update the prior based on observations from the same talker [see discussion in @xie2023]. The Bayesian approach inherent in the P/BSTM is ideally suited for this purpose.
 
-Second, the BSTM can naturally integrate the perception of indexical speaker characteristics such as age (@b_age_2018), height (@b_height_2017), or gender (@b_gender_21), via their shared reliance on $\psi_s$ [see also @kleinschmidt2018]. For example, consider the perception of some speaker characteristic $\theta$. To simultaneously estimate vowel category, $\psi_s$, *and* this new characteristic, we would add it to our model as in @eq-BSTM-joint-posterior-psi-vowel-and-indexical. This requires adding $\theta$ to the likelihood and considering joint prior of $\theta$, $\psi_s$ and vowel category. Such an approach would allow for a direct empirical comparison of different models regarding the perceptual integration of speech and social perception with relatively modest extensions of the models described here.
+Second, the BSTM can naturally integrate the perception of indexical speaker characteristics such as age [@b_age_2018], height [@b_height_2017], or gender [@b_gender_21], via their shared reliance on $\psi_s$ [see also @kleinschmidt2018]. For example, consider the perception of some speaker characteristic $\theta$. To simultaneously estimate vowel category, $\psi_s$, *and* this new characteristic, we would add it to our model as in @eq-BSTM-joint-posterior-psi-vowel-and-indexical. This requires adding $\theta$ to the likelihood and considering joint prior of $\theta$, $\psi_s$ and vowel category. Such an approach would allow for a direct empirical comparison of different models regarding the perceptual integration of speech and social perception with relatively modest extensions of the models described here.
 
 $$
 P(\text{v},  \psi_s, \theta| \vec{G}) \propto P(\vec{G} | \text{v}, \psi_s, \theta) \cdot P(\text{v},  \psi_s, \theta)
