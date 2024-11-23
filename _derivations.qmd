@@ -1,6 +1,6 @@
 ---
 title: "Derivation of Analytic solution for the PSTM"
-authors: Santiago Barreda and T. Florian Jaeger
+author: Santiago Barreda and T. Florian Jaeger
 format: docx
 math: true
 ---
