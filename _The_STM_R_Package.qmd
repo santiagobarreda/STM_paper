@@ -1,6 +1,7 @@
 ---
-title: "Supplemental Online Materials: The PSTM R package"
+title: "The STM R package"
 format: docx
+author: Santiago Barreda and T. Florian Jaeger
 ---
 
 # Introduction
@@ -19,7 +20,7 @@ if (!("STM" %in% installed.packages()))
 We load the STM package and the `h95_data` (Hillenbrand et al. 1995, henceforth H95) dataset. This is the complete data asociated with the H95 paper that was once hosted on James Hillenbrand's academic website, now down (and distributed with his permission). The data loaded below contains: formant data at a 'stable part' of the vowel, formant values at different time points, listener classifications for each judgement, and two estimates of $\hat{\psi}_s$: `psi_1` (based on the stable part of the formants) and `psi_2` (based on measurements at 20% and 80%). 
 
 
-```{r, eval = FALSE} 
+```{r} 
 library (STM)
 data (h95_data)
 head (h95_data)
