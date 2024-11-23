@@ -1,8 +1,6 @@
 ---
 title: Re-introducing the probabilistic sliding template model of vowel perception
-authors: 
-  - name: Santiago Barreda 
-  - name: T. Florian Jaeger
+author: Santiago Barreda and T. Florian Jaeger
 format:
   docx:
     number-sections: true
