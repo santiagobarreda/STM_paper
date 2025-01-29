@@ -549,6 +549,7 @@ The results of the bootstrap analysis are presented in @fig-bootboxplot. Method 
 ```{r load-b, eval = TRUE, echo = FALSE}
 load ("simulation_data/hz_sim.RData")
 load ("simulation_data/hz_log_sim.RData")
+load ("simulation_data/lobanov_sim.RData")
 load ("simulation_data/PSTM1_single_sim.RData")
 load ("simulation_data/PSTM1_sim.RData")
 load ("simulation_data/BSTM6_sim.RData")
@@ -570,25 +571,29 @@ load ("simulation_data/PSTM2_sim.RData")
 
 ######
 
-loglik = cbind(hz_loglikelihoods,hz_log_loglikelihoods,
-               PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
-               PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
-               BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
+loglik = 
+  cbind(hz_loglikelihoods,hz_log_loglikelihoods,
+        lobanov_loglikelihoods,
+        PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
+        PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
+        BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
 
-loglik_intended = cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
-               PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
-               PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
-               PSTM6_intended_loglikelihoods,
-               BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
-               BSTM6_intended_loglikelihoods)
+loglik_intended = 
+  cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
+        lobanov_intended_loglikelihoods,
+        PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
+        PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
+        PSTM6_intended_loglikelihoods,
+        BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
+        BSTM6_intended_loglikelihoods)
 
 rmss = cbind(PSTM1_single_rmss, 
              PSTM2_rmss,PSTM3_rmss,PSTM6_rmss,
              BSTM2_rmss,BSTM3_rmss,BSTM6_rmss)
 
 
-loglik_diffs = (loglik - loglik[,10])
-loglik_intended_diffs = (loglik_intended - loglik_intended[,10])
+loglik_diffs = (loglik - loglik[,11])
+loglik_intended_diffs = (loglik_intended - loglik_intended[,11])
 rmss_diffs = (rmss - rmss[,7])
 
 probs_interval_loglik <- c(0.0, 0.95)
@@ -596,7 +601,7 @@ probs_interval_rms <- c(0.05, 1)
 
 par (mfcol = c(1,3), mar = c(5,.2,.1,.2), oma = c(0.6,9.1,0.2,0.1))
 
-labels = c("Hz","log-Hz","PSTM1\n(balanced data)","PSTM1\n(single trial)",
+labels = c("Hz","log-Hz","Lobanov","PSTM1\n(balanced data)","PSTM1\n(single trial)",
            "PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
 
 bmmb::brmplot (brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik), 
@@ -641,8 +646,7 @@ Finally, another appealing feature of the STM is that it provides estimates of $
 
 Almost two decades after its introduction, the PSTM remains the only published fully spelled-out model of incremental formant normalization and vowel perception. By making available the code for this model in the form of an R library, we hope to make the advantages of the PSTM and its extensions more accessible to other researchers. The PSTM's approach to normalization, uniform scaling, is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons [reviewed in @b20]. The log-mean method of uniform scaling has been consistently found to provide a better fit against listeners' perception than other influential methods, such as Lobanov normalization [@b21; @persson2024; @richter2017]. 
 
-<!-- SB: the results now show only method 6 is substantially better so I changed this accordingly.
-Our bootstrap simulations confirm that *all* of the incremental methods proposed by @NA07 provide a better model of human perception than a model without normalization.--> Our bootstrap simulations confirm that method 6---which assumes that listeners consider both intrinsic and extrinsic information in guiding their prior expectations about $\psi_s$---best explains listeners' behavior in the data from @h95. The new BSTM, a more fully Bayesian extension of the PSTM, performed similarly to the original PSTM---both in terms of the ability to capture listeners' perception of vowels, and in terms of estimating the uniform scaling parameter $\psi_s$. 
+Our bootstrap simulations confirm that method 6---which assumes that listeners consider both intrinsic and extrinsic information in guiding their prior expectations about $\psi_s$---best explains listeners' behavior in the data from @h95. The new BSTM, a more fully Bayesian extension of the PSTM, performed similarly to the original PSTM---both in terms of the ability to capture listeners' perception of vowels, and in terms of estimating the uniform scaling parameter $\psi_s$. 
 
 In future work we plan to expand evaluation of the BSTM in three ways. First, here we evaluated 'single-shot' implementations of methods 2, 3, and 6. That is, we did not incrementally accumulate information about $\psi_s$ across trials. For data like those in @h95, where listeners' rarely hear speech from the same talker for multiple trials in a row, this is likely an acceptable simplifying assumption. However, the single-shot implementations considered here might well underestimate listeners' ability to integrate information across observations from the same talker. In future work, we thus plan to extend these methods to incrementally update the prior based on observations from the same talker [see discussion in @xie2023]. The Bayesian approach inherent in the P/BSTM is ideally suited for this purpose.
 
