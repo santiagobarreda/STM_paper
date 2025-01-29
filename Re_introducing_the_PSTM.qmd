@@ -527,7 +527,7 @@ We compare ten different methods that differ in terms of how they estimate $\psi
    + over the entire training data (*PSTM1 (balanced data)*)
    + based on the individual token (*PSTM1 (single trial)*), as a more direct baseline for the remaining methods (all of which are based on individual tokens)
 
-<!-- first mention, are breadcrumbs needed??-->
+<!-- first mention of Lobanov, are hints needed earlier??-->
  + **Normalization using the [@lobanov1971] method** using the entire training data. This method involves standardization of each speaker's formants by subtracting the mean and dividing by the standard deviation of each formant, independently for each time point. This is perhaps the most commonly used normalization method in speech research as of this writing. However, there are theoretical [@b20] and empirical [@b21] reasons to think it may not provide an adequate model of human vowel perception.
 
  + **Normalization with $\hat{\psi}_s$ estimated using *PSTM* **
@@ -615,12 +615,12 @@ mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
 bmmb::brmplot (brms::posterior_summary(loglik_intended_diffs, 
                                        prob = probs_interval_loglik), 
                labels = "", ylab = "",line=FALSE,cex.axis=1.4,cex.lab=1.4,
-               xlab = "",
+               xlab = "",xaxt = 'n',
                xlim = c(-2000,2000), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
 abline (v=0,lty=3,col="black")
 legend("bottomleft", legend="(b)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
-
+axis (side=1, cex.axis=1.4, at = c(-1000,0,1000))
 
 par (mar = c(5,.2,8,.2))
 
@@ -636,7 +636,12 @@ abline (v=0,lty=3,col="black")
 legend("bottomright", legend="(c)", bty="n", cex=1.5)
 ```
 
+<!-- in the plot above, I dont know if its worth extending the range of the middle panel. what do you think? it would reduce the view of the important differences quite a bit. I provide the mean difference for Lobanov wrt BSTM6 in a paragraph below-->
+
 Of particular note, method 6 provides a better fit to listeners' responses than the 'classic' approach over balanced data [method 1 in @NA07].^[This finding---that method 6 outperforms the classic approach in predicting listeners' responses---differs from @NA07. In separate analyses not reported here, we confirmed that this difference in results is due to the goodness-of-fit metric employed by Nearey and Assman: the accuracy (under the criterion choice rule) of predicting listeners' most common response to a stimulus. This metric is now understood to be problematic [for discussion, @persson2024]. By using a more adequate metric---the log-likelihood of listeners' responses---we revise one of the more puzzling findings of @NA07.] This is of note because the classic approach---which estimates $\psi_s$ from the balanced and complete training data---has access to far more speaker-specific information than method 6. As a consequence, the classic approach achieves the best performance in predicting the vowel category that the *talker intended to produce* (see @fig-bootboxplot(b)). Yet, the classic approach does *not* provide the best explanation for listeners' categorization responses. This highlights what should be obvious---and yet is often ignored in research on normalization: that listeners do not have access to a large and balanced set of vowel productions from a talker when they first encounter them. Effective speech perception thus requires mechanisms that can incrementally infer the relevant quantities (here $\psi_s$) based on prior expectations and other available information (e.g., $f0$, as in method 6).
+
+<!-- NEW paragraph about Lobanov normalization-->
+The results for Lobanov normalization show an even more extreme divergence between the prediction of listener behavior and intended vowel category. Other than the method 1 single trial approach, Lobanov normalization provides the worst fit to listeners' responses (the mean different to BSTM method 6 is -2964). However, it provides the best fit to the intended vowel category (the mean different to BSTM method 6 is 2378). This is consistent with the idea that Lobanov normalization is a very poor model of human speech perception, even if it excels at predicting intended category labels.
 
 Method 6 also outperforms method 1 when the latter is applied trial-by-trial. We included this variant of method 1 [not considered in @NA07] as a more direct baseline to the single-trial methods 2, 3, and 6. The fact that the single-trial variant of method 1 performs so poorly that it is not even visible in  @fig-bootboxplot (a) validates the issues we raised in section @sec-methods about method 1: it would lead to highly unstable vowel perception, and listeners do not seem to use it. 
 
