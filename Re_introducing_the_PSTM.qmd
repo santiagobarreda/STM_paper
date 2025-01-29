@@ -527,6 +527,9 @@ We compare ten different methods that differ in terms of how they estimate $\psi
    + over the entire training data (*PSTM1 (balanced data)*)
    + based on the individual token (*PSTM1 (single trial)*), as a more direct baseline for the remaining methods (all of which are based on individual tokens)
 
+<!-- first mention, are breadcrumbs needed??-->
+ + **Normalization using the [@lobanov1971] method** using the entire training data. This method involves standardization of each speaker's formants by subtracting the mean and dividing by the standard deviation of each formant, independently for each time point. This is perhaps the most commonly used normalization method in speech research as of this writing. However, there are theoretical [@b20] and empirical [@b21] reasons to think it may not provide an adequate model of human vowel perception.
+
  + **Normalization with $\hat{\psi}_s$ estimated using *PSTM* **
    + method 2
    + method 3
