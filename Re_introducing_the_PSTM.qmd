@@ -45,6 +45,18 @@ We describe the PSTM, and present a more fully Bayesian extension---the *Bayesia
 <!-- I don't know if this needs its own section or even if it should go here. I am putting it here now for organizational purposes -->
 ## Biological Plausibility of the PSTM
 
+It is important to note that the model to be outlined is not just a clever model hat best explains human vowel perception compared to competitors, though those things are true. In addition, the PSTM approach to normalization, uniform scaling, is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons. 
+
+Points to make (potentially):
+
+- uniform scaling is closely related to size varation due to basic physics.
+- size perception, aka normalization, is a fundamental aspect of perception in general, and has been observed in all sorts of animal species. 
+- size perception, uniform scaling norm, has been compared to perceptual size constancy in vision. 
+- the 'traditional' approach to norm is not biologicaly plausible, no magic book of answers is available to listeners
+- the PSTM addresses the bootstrap problem of norm: listeners must guess that speaker characteristics together with speech
+- as noted by Nusbaum, acoustic to speaker characteristics mapping poses the same many-to-many mapping as acoustics to speech. In other words, guessing both together is HARD, probably explaining why researchers have mosly ignored the problem. 
+
+
 
 
 ## Contribution
