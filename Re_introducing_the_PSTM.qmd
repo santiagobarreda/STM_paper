@@ -40,6 +40,21 @@ Focusing on vowel perception, we describe the *Probabilistic Sliding Template Mo
 
 We describe the PSTM, and present a more fully Bayesian extension---the *Bayesian Sliding Template Model (BSTM)*---envisioned in @NA07 but not previously available. The models described here are implemented in the R package `STM`, which is designed to be user-friendly and flexible. The present article uses the `STM` package, and is written in Quarto markdown. This markdown document, and all R code it sources, are available as part of the OSF repository at https://osf.io/tpwmv/. This allows interested researchers to re-create all of our analyses with the press of a button in RStudio [@R; @RStudio], and to apply similar analyses to their own data.
 
+## Contribution
+
+<!--  this whole section is copied from response email. I removed parts that were clearly only for the email-->
+
+We believe the Nearey and Assman 2007 PSTM paper is one of the most ground-breaking papers in speech perception that nobody has ever read. It’s been cited less than 40 times over the last 17 years! To put this into perspective, there have been 98,000 research articles on vowels since 2007. Almost 30,000 of these articles explicitly mention “vowel identification”. Among these articles---since 2007---“Lobanov normalization” is cited 10-times as often as Nearey’s “uniform scaling” (!). A total of three papers mention the incremental procedure introduced in NA07 that we describe in our paper. Notably, the NA07 paper is the only the only published article that describes the incremental inference model in much detail at all---it’s not like all those citations went to another follow-up paper.
+
+So, here is a paper that has the most promising candidate model of formant/spectral talker-normalization, with far-reaching consequences for research from typology to sociolinguistics to speech perception. It’s almost two decades old and few know it, and even fewer understand it. 
+Why? How did this happen?
+
+Well, part of it is probably how it was written, and where it was published. It’s a very dense, technical paper written by experts for experts and published in a book chapter (but then again, I have plenty of conference proceedings that have higher impact factors than this ground-breaking paper, so there’s more to it than the venue). E.g.: The paper present 7 distinct models, without much handholding for the reader (e.g., no visualization of the core aspects of the model, unlike the figures we provide in our paper). No derivations are provided for any of the models (unlike our paper and SI). No code is provided to run any of the models (unlike the R library that we will distribute with our paper). The bigger picture question, and links to related works beyond vowel perception, receive relatively little space in the paper. None of the consequences for other fields are laid out in the paper (some of that has since been done in other papers).
+The results are presented only in passing at the very end of the paper. So, why is nobody using this model? Because they don’t know how to, and they don’t know why they should.
+
+And then there’s the issue that the results presented in NA07 are not the same as ours. In fact, they look a lot weaker than what we present. Why? Because of a tiny little mistake the authors made by evaluating the models in terms of the accuracy of predicting the most common human response, rather than the likelihood of human responses (when we use the same metric as in the original, we replicate the original result). Unfortunately, we only said all of this in passing in a footnote. But arguably, the rather non-decisive original result played a role in limiting the impact of the paper, too.
+ 
+What we were trying to do in this short manuscript is to (1) make this idea accessible to others, by sparing them the work we had to do and by making a library that makes it trivial to use the model, and (2) provide a succinct intro that highlights the relevance of the work, while (3) given all due credit to Terrance and Peter. 
 
 # Perceptual normalization through uniform scaling {#sec-uniform}
 
