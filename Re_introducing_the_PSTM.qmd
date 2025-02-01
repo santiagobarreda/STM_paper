@@ -5,16 +5,14 @@ format:
   docx:
     number-sections: true
 bibliography: references.bib
-abstract: We introduce a fully Bayesian variant of the Probabilistic Sliding Template Model (PSTM) of vowel normalization and perception, first proposed in Nearey and Assmann (2007). Models of normalization typically assume that relevant speaker parameters are already 'known'---e.g., because the researcher can estimate them from a fully balanced set of vowel recordings. Listeners, however, have to incrementally infer these parameters from the speech input. The PSTM describes this process by integrating social and linguistic inferences into a joint inference process. This allows for the empirical investigation of connections between speech perception, social knowledge, and the estimation of speaker indexical characteristics. A bootstrap analysis indicates that the PSTM explains listener behavior much better than traditional approaches to normalization. The models described here are implemented in the R package STM. This package allows researchers to apply the models described here to their own formant data and research questions.
+abstract: Research in phonetics and phonology---from sociolinguistics to historical and typological linguistics---relies on strong assumptions about phonetic features (e.g., relevance of formants to vowel perception). This includes assumptions about how the acoustics of the speech signal are normalized into phonetic representations that are comparatively invariant to talker physiology. Despite the fundamental importance of such normalization to both speech perception and linguistic research, almost all popular normalization accounts make the obviously wrong assumptions that the relevant normalization parameters are already 'known'---e.g., because the researcher can estimate them from a fully balanced set of recordings. Listeners, however, have to incrementally infer these parameters from the speech input. A seminal, but still underappreciated, exception is the Probabilistic Sliding Template Model of vowel normalization and perception (PSTM, Nearey and Assmann, 2007). We introduce a fully Bayesian variant of the PSTM, along with an R library that makes it trivial to apply the model to new data using only a few lines of R code. The PSTM integrates social and linguistic inferences into a joint inference process. This allows for the empirical investigation of connections between speech perception, social knowledge, and the estimation of speaker indexical characteristics. A new bootstrap validation shows that the PSTM explains listener behavior much better than the hugely popular Lobanov normalization.
 math: true
 ---
 
 ```{r, include=F}
 if (!("devtools" %in% installed.packages())) install.packages("devtools")
-if (!("STM" %in% installed.packages())) {
-  devtools::install_github("santiagobarreda/STM")
-  devtools::install_github("santiagobarreda/bmmb")
-}
+if (!("STM" %in% installed.packages())) devtools::install_github("santiagobarreda/STM")
+if (!("bmmb" %in% installed.packages())) devtools::install_github("santiagobarreda/bmmb")
 ```
 
 ```{r, include=F}
