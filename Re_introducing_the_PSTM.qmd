@@ -553,7 +553,7 @@ We used the following process, repeated over 1000 bootstrap iterations for each 
 
 5.  Calculate performance metrics A)-C) described above.
 
-We compare ten different methods that differ in terms of how they estimate $\psi_s$, and whether they estimate $\psi_s$ at all:
+We compare 11 different methods that differ in terms of how they estimate $\psi_s$, and whether they estimate $\psi_s$ at all. Some of these were included in @NA07, others were not (incl. the popular Lobanov method):
 
  + **No normalization**
    + input is $\vec{F}$ (Hz)
