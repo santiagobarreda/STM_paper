@@ -59,20 +59,9 @@ Why? @NA07 is a technical paper, written by experts for experts. It presents sev
 
 A second reason as to why the PSTM has not received more attention might originate in the less than striking *result* presented in @NA07. As we show below, these results were caused by a problematic choice Nearey and Assman made during the evaluation of the PSTM against listeners' perception. Once this issue is addressed, we find that the incremental inference procedure proposed for the PSTM explains listeners' perception very well, and *substantially* better than the most frequently used normalization account (Lobanov). 
 
-<!-- I don't know if this needs its own section or even if it should go here. I am putting it here now for organizational purposes -->
-<!-- I think it should be integrated either above or into the the next subsection -->
-## Biological Plausibility of the PSTM
+<!-- I think this makes more sense here, to get readers more invested. I took a crack at it -->
 
-It is important to note that the model to be outlined is not just a clever model hat best explains human vowel perception compared to competitors, though those things are true. In addition, the PSTM approach to normalization, uniform scaling, is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons. 
-
-Points to make (potentially):
-
-- uniform scaling is closely related to size varation due to basic physics.
-- size perception, aka normalization, is a fundamental aspect of perception in general, and has been observed in all sorts of animal species. 
-- size perception, uniform scaling norm, has been compared to perceptual size constancy in vision. 
-- the 'traditional' approach to norm is not biologicaly plausible, no magic book of answers is available to listeners
-- the PSTM addresses the bootstrap problem of norm: listeners must guess that speaker characteristics together with speech
-- as noted by Nusbaum, acoustic to speaker characteristics mapping poses the same many-to-many mapping as acoustics to speech. In other words, guessing both together is HARD, probably explaining why researchers have mosly ignored the problem. 
+It is important to note the PSTM is not just a clever model that best explains human vowel perception compared to competitors, though those things are true. The PSTM is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons. The uniform scaling of spectral patterns is closely related to size variation due to the physics of acoustic resonators. As a result, many animal species have been found to separate uniform scaling (size information) from the communicative information present in the signal. As noted by @b20, when human listeners exhibit this behavior we call it 'normalization'. Furthermore, the PSTM helps address the 'bootstrap' problem of speech normalization: listeners must know some speaker characteristics in order to accurately identify speech, but must accurately identify speech in order to properly normalize. Speaker characteristics and speech acoustics enter into the same many-to-many mapping relationship as the linguistic signal and speech acoustics. Consequently, determining both simultaneously from the speech signal is difficult, and the PSTM is one of the few models that addresses this problem in an empirically testable manner.
 
 # Perceptual normalization through uniform scaling {#sec-uniform}
 
@@ -175,8 +164,8 @@ $$
 \vec{N}:= [ N1, \; N2, \; N3, \; ... ] = \vec{G} - \vec{\psi}_s
 $$ {#eq-define-N}
 
-Such uniform scaling provides a comparatively parsimonious approach, assuming that listeners infer and store a single parameter. To put this into perspective, the perhaps the most commonly used normalization method in speech research---Lobanov normalization---assumes that listeners infer and store two parameters per feature. For instance, to model the effects of the first three formants at two time points in the vowel (as we do below), listeners would need to estimate twelve independent parameters <!-- changed 6 to 12. I scaled each vector independently. I dont know if it would be better to scale formants together across time slices, Lobanov certainly never spoke on this.-->. This linearly scaling complexity of Lobanov normalization is one of the reasons it might not be an adequate model for aspects of human speech perception that are thought to be evolutionary quite old [see above; for related discussion, see @b20; @b21; @persson2024]. <!-- would whalen 2016 also matter here? SB: I looked through his 2016 papers and am not sure which one.-->
 
+Such uniform scaling provides a comparatively parsimonious approach, assuming that listeners infer and store a single parameter. To put this into perspective, the perhaps the most commonly used normalization method in speech research---Lobanov normalization---assumes that listeners infer and store two parameters per feature. For instance, to model the effects of the first three formants at two time points in the vowel (as we do below), listeners would need to estimate twelve independent parameters <!-- changed 6 to 12. I scaled each vector independently. I dont know if it would be better to scale formants together across time slices, Lobanov certainly never spoke on this.-->. This linearly scaling complexity of Lobanov normalization is one of the reasons it might not be an adequate model for aspects of human speech perception that are thought to be evolutionary quite old [see above; for related discussion, see @b20; @b21; @persson2024]. <!-- would whalen 2016 also matter here? SB: I looked through his 2016 papers and am not sure which one.-->
 
 # The Probabilistic Sliding Template Model of vowel perception (PSTM)
 
