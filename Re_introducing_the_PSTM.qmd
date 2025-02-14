@@ -649,9 +649,9 @@ bmmb::brmplot (
   col = cols)
 
 abline (v=0,lty=3,col="black")
-legend("bottomleft", legend="(a)", bty="n", cex=1.5)
+#legend("bottomleft", legend="(a)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
-mtext (side=3,"Predicting Perceived Category",line=0.2)
+mtext (side=3,"(a) Predicting Perceived Category",line=0.2)
 arrows (x0 = -4500, x1 = -5000, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","black","grey60","grey60","grey60",
@@ -664,10 +664,10 @@ bmmb::brmplot (
   cex=2, col = cols)
 
 abline (v=0,lty=3,col="black")
-legend("bottomleft", legend="(b)", bty="n", cex=1.5)
+#legend("bottomleft", legend="(b)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
 axis (side=1, cex.axis=1.4, at = c(-1000,0,1000,2000))
-mtext (side=3,"Predicting Intended Category",line=0.2)
+mtext (side=3,"(b) Predicting Intended Category",line=0.2)
 arrows (x0 = -1250, x1 = -1750, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
@@ -686,8 +686,8 @@ bmmb::brmplot (
   horizontal=FALSE, cex=2, col = cols[-c(1:4)])
 
 abline (v=0,lty=3,col="black")
-legend("bottomright", legend="(c)", bty="n", cex=1.5)
-mtext(side = 3, expression(Predicting ~ psi[s]), line = 0.2)
+#legend("bottomright", legend="(c)", bty="n", cex=1.5)
+mtext(side = 3, expression('(c)' ~ Predicting ~ psi[s]), line = 0.2)
 
 ```
 
