@@ -71,10 +71,11 @@ saveRDS (bootstrap_datasets, "simulation_data/bootstrap_datasets.RDS")
 
 ## Make bootstrap templates
 
-Pre-calculate templates for 1 and 2 formant slice data, and for hz and log mean normalized spaces. 
+Pre-calculate templates for Hz, log-transformed Hz, log mean, and Lobanov normalized spaces. 
 
 ```{r}
 templates_lm = rep(list(),bootstrap_iterations)
+templates_lobanov = rep(list(),bootstrap_iterations)
 templates_hz = rep(list(),bootstrap_iterations)
 templates_hz_log = rep(list(),bootstrap_iterations)
 
@@ -87,6 +88,12 @@ for (i in 1:bootstrap_iterations){
     
   templates_lm[[i]] = 
     create_template (tmp_ffs[,1:6]-t_data$psi, t_data$vowel, shared_covar = TRUE)
+  
+  
+  ## Lobanov normalization and template
+  tmp_ffs_lob = lobanov_normalize (tmp_ffs, t_data$speaker, t_data$vowel, warning = FALSE)
+  templates_lobanov[[i]] = 
+    create_template (tmp_ffs_lob[,1:6], t_data$vowel, shared_covar = TRUE)
 
   ## hertz, no norm
   
@@ -103,6 +110,7 @@ for (i in 1:bootstrap_iterations){
 
 ```{r}
 saveRDS (templates_lm, 'simulation_data/templates_lm.RDS')
+saveRDS (templates_lobanov, 'simulation_data/templates_lobanov.RDS')
 saveRDS (templates_hz, 'simulation_data/templates_hz.RDS')
 saveRDS (templates_hz_log, 'simulation_data/templates_hz_log.RDS')
 ```
@@ -121,6 +129,7 @@ And templates:
 
 ```{r}
 templates_lm = readRDS("simulation_data/templates_lm.RDS")
+templates_lobanov = readRDS("simulation_data/templates_lobanov.RDS")
 templates_hz = readRDS("simulation_data/templates_hz.RDS")
 templates_hz_log = readRDS("simulation_data/templates_hz_log.RDS")
 ```
@@ -194,6 +203,43 @@ for (i in 1:bootstrap_iterations){
 save(hz_log_loglikelihoods = hz_log_loglikelihoods, 
      hz_log_intended_loglikelihoods = hz_log_intended_loglikelihoods, 
      file = "simulation_data/hz_log_sim.RData")
+```
+
+## Lobanov normalization boostrapping
+
+
+```{r}
+lobanov_loglikelihoods = rep(0,bootstrap_iterations)
+lobanov_intended_loglikelihoods = rep(0,bootstrap_iterations)
+
+for (i in 1:bootstrap_iterations){
+  if (i %% 100 == 0) print (i)
+  t_dat = bootstrap_datasets[[i]]
+  training = t_dat$training
+  testing = t_dat$testing
+  
+  testing_ffs = testing[,c(4:9)]
+  testing_classifications = testing[,15:26]
+  
+  testing_ffs = lobanov_normalize (testing_ffs, testing$speaker, testing$vowel)
+  lobanov_posteriors = STM (testing_ffs[,1:6], templates_lobanov[[i]])
+
+  lobanov_loglikelihoods[i] = 
+    model_likelihood (testing_classifications, lobanov_posteriors$df)
+  
+  intended_phoneme = 
+    do.call(rbind, replicate(nrow(testing)/12, diag(12)*20, simplify = FALSE))
+  
+  lobanov_intended_loglikelihoods[i] = 
+    model_likelihood (intended_phoneme, lobanov_posteriors$df)
+  
+}
+```
+
+```{r}
+save(lobanov_loglikelihoods = lobanov_loglikelihoods,
+     lobanov_intended_loglikelihoods = lobanov_intended_loglikelihoods,
+     file = "simulation_data/lobanov_sim.RData")
 ```
 
 
@@ -540,6 +586,7 @@ save(PSTM2_loglikelihoods=PSTM2_loglikelihoods,
 ```{r}
 load ("simulation_data/hz_sim.RData")
 load ("simulation_data/hz_log_sim.RData")
+load ("simulation_data/lobanov_sim.RData")
 load ("simulation_data/PSTM1_sim.RData")
 load ("simulation_data/PSTM1_single_sim.RData")
 load ("simulation_data/BSTM6_sim.RData")
@@ -564,24 +611,27 @@ load ("simulation_data/PSTM2_sim.RData")
 ######
 
 loglik = cbind(hz_loglikelihoods,hz_log_loglikelihoods,
+               lobanov_loglikelihoods,
                PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
                PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
                BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
 
-loglik_intended = cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
-               PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
-               PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
-               PSTM6_intended_loglikelihoods,
-               BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
-               BSTM6_intended_loglikelihoods)
+loglik_intended = 
+  cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
+        lobanov_intended_loglikelihoods,
+        PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
+        PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
+        PSTM6_intended_loglikelihoods,
+        BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
+        BSTM6_intended_loglikelihoods)
 
-rmss = cbind(lm_single_rmss, 
+rmss = cbind(PSTM1_single_rmss, 
              PSTM2_rmss,PSTM3_rmss,PSTM6_rmss,
              BSTM2_rmss,BSTM3_rmss,BSTM6_rmss)
 
 
-loglik_diffs = (loglik - loglik[,10])
-loglik_intended_diffs = (loglik_intended - loglik_intended[,10])
+loglik_diffs = (loglik - loglik[,11])
+loglik_intended_diffs = (loglik_intended - loglik_intended[,11])
 rmss_diffs = (rmss - rmss[,7])
 
 probs_interval_loglik <- c(0.0, 0.95)
@@ -589,7 +639,7 @@ probs_interval_rms <- c(0.05, 1)
 
 par (mfcol = c(1,3), mar = c(4,.2,.1,.2), oma = c(0.1,7.1,0.2,0.1))
 
-labels = c("Hz","log-Hz","PSTM1\n(balanced data)","PSTM1\n(single trial)",
+labels = c("Hz","log-Hz","Lobanov","PSTM1\n(balanced data)","PSTM1\n(single trial)",
            "PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
 
 bmmb::brmplot (brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik), 

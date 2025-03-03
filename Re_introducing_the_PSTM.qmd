@@ -5,24 +5,24 @@ format:
   docx:
     number-sections: true
 bibliography: references.bib
-abstract: We introduce a fully Bayesian variant of the Probabilistic Sliding Template Model (PSTM) of vowel normalization and perception, first proposed in Nearey and Assmann (2007). Models of normalization typically assume that relevant speaker parameters are already 'known'---e.g., because the researcher can estimate them from a fully balanced set of vowel recordings. Listeners, however, have to incrementally infer these parameters from the speech input. The PSTM describes this process by integrating social and linguistic inferences into a joint inference process. This allows for the empirical investigation of connections between speech perception, social knowledge, and the estimation of speaker indexical characteristics. A bootstrap analysis indicates that the PSTM explains listener behavior much better than traditional approaches to normalization. The models described here are implemented in the R package STM. This package allows researchers to apply the models described here to their own formant data and research questions.
+abstract: Research in phonetics and phonology---from sociolinguistics to historical and typological linguistics---relies on strong assumptions about phonetic features (e.g., relevance of formants to vowel perception). This includes assumptions about how the acoustics of the speech signal are normalized into phonetic representations that are comparatively invariant to talker physiology. Despite the fundamental importance of such normalization to both speech perception and linguistic research, almost all popular normalization accounts make the obviously wrong assumptions that the relevant normalization parameters are already 'known'---e.g., because the researcher can estimate them from a fully balanced set of recordings. Listeners, however, have to incrementally infer these parameters from the speech input. A seminal, but still underappreciated, exception is the Probabilistic Sliding Template Model of vowel normalization and perception (PSTM, Nearey and Assmann, 2007). We introduce a fully Bayesian variant of the PSTM, along with the R package `STM`, which makes it trivial to apply the model to new data using only a few lines of R code. The PSTM integrates social and linguistic inferences into a joint inference process. This allows investigation of connections between speech perception, social knowledge, and the estimation of speaker indexical characteristics. A new bootstrap validation shows that the PSTM explains listener behavior much better than the hugely popular Lobanov normalization.
 math: true
 ---
 
 ```{r, include=F}
 if (!("devtools" %in% installed.packages())) install.packages("devtools")
-if (!("STM" %in% installed.packages())) {
-  devtools::install_github("santiagobarreda/STM")
-  devtools::install_github("santiagobarreda/bmmb")
-}
+if (!("STM" %in% installed.packages())) devtools::install_github("santiagobarreda/STM")
+if (!("bmmb" %in% installed.packages())) devtools::install_github("santiagobarreda/bmmb")
 ```
 
 ```{r, include=F}
 library (STM)
 
-cols = c("#F7B5C5BF", "#27C0D8BF", "#F8A61BBF", "#0C8275BF", "#FEEF94C8",
-         "#822B32BF", "#3A65AFBF", "#FF6400BF", "#413069B4", "#94CB94C8",
-         "#DB686FDC", "#88021BB4", "#719F9FDC", "#CA87B9BF", "#6C0F2DC8")
+cols = c("#F7B5C5BF", "#27C0D8BF", "#F8A61BBF", 
+         "#0C8275BF", "#FEEF94C8", "#822B32BF",
+         "#3A65AFBF", "#FF6400BF", "#413069B4", 
+         "#94CB94C8", "#DB686FDC", "#88021BB4",
+         "#719F9FDC", "#CA87B9BF", "#6C0F2DC8")
 
 data(h95_data)
 h95 = h95_data
@@ -36,10 +36,32 @@ classifications = h95_classifications
 
 Cross-talker variability poses a computational challenge for speech perception: since different talkers can realize the same phonetic information with different acoustics, robust perception across talkers can only be achieved by somehow adjusting to these differences. At the same time, cross-talker differences in pronunciation provide information about the language background and social identity of speakers. One way to approach these issues has been to describe both linguistic and social perception as inference over the joint distribution of auditory percepts (e.g., in the form of phonetic cues), linguistic, and social categories. This can be conceptualized as similarity-based inferences over exemplars [@johnson1997; @sumner2011] or as Bayesian inferences [@kleinschmidt-jaeger2015; @kleinschmidt2018]. However, there is of yet no widely available model that implements these ideas and makes them testable. This motivates the present work.
 
-Focusing on vowel perception, we describe the *Probabilistic Sliding Template Model (PSTM)*, first presented in @NA07, and based on Terrance Nearey's sliding template model [STM, @n78]. The PSTM is a Bayesian model of *vowel normalization*, the perceptual mapping between acoustic information and some linguistic representation. It integrates social and linguistic inferences into a joint process, simultaneously estimating speaker characteristics and categorizing vowels. In doing so, the PSTM allows for the empirical investigation of the connection between speech perception, social knowledge, and the estimation of speaker indexical characteristics. Further, unlike most existing models of normalization, the PSTM infers the speaker characteristics required for normalization *incrementally* from the speech input, doing so---as we show below---with high accuracy even from a single vowel input.
+Focusing on vowel perception, we describe the *Probabilistic Sliding Template Model (PSTM)*, first presented in @NA07, and based on Terrance Nearey's sliding template model [STM, @n78]. The PSTM is a Bayesian model of *vowel normalization*, the perceptual mapping between acoustic information and some linguistic representation. It integrates social and linguistic inferences into a joint process, simultaneously estimating speaker characteristics and categorizing vowels. In doing so, the PSTM allows for the empirical investigation of the connection between speech perception, social knowledge, and the estimation of speaker indexical characteristics. Further, unlike most existing models of normalization, the PSTM infers the speaker characteristics required for normalization *incrementally* from the speech input, doing so---as we show below---with high accuracy even from a single vowel input. In doing so, the PSTM helps address the 'bootstrap' problem of speech normalization: listeners must know some speaker characteristics in order to normalize (and identify) speech but must accurately identify speech in order to accurately estimate the speaker characteristics required to normalize. Speaker characteristics and speech acoustics enter into the same many-to-many mapping relationship as the linguistic signal and speech acoustics. Consequently, determining both simultaneously from the speech signal is difficult, and the PSTM is one of the few models that addresses this problem in an empirically testable manner. 
 
-We describe the PSTM, and present a more fully Bayesian extension---the *Bayesian Sliding Template Model (BSTM)*---envisioned in @NA07 but not previously available. The models described here are implemented in the R package `STM`, which is designed to be user-friendly and flexible. The present article uses the `STM` package, and is written in Quarto markdown. This markdown document, and all R code it sources, are available as part of the OSF repository at https://osf.io/tpwmv/. This allows interested researchers to re-create all of our analyses with the press of a button in RStudio [@R; @RStudio], and to apply similar analyses to their own data.
+This incremental inference mechanism stands out even when compared to the type of modern models of automatic speech recognition (ASR; e.g., HuBERT, Wav2vec, Whipser). These models have made tremendous progress in understanding human speech, including when faced with inter-talker variability [e.g., @kim2024]. Recent work further suggests that the latent perceptual representations learned by these ASR models capture some aspects of human speech perception, such as the ability to generalize to unfamiliar accents [@chernyak2024; @jin2025]. Unlike the PSTM, none of these models yet exhibits the incremental changes in perception that have been shown to occur in human listeners when exposed to different talkers of familiar accents [@magnuson-nusbaum2007; @barreda2012; @persson2025]. 
 
+Notably, the PSTM is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons. The uniform scaling of spectral patterns---the formant normalization procedure proposed by (P)STM---is closely related to size variation due to the physics of acoustic resonators. Indeed, several animal species, such as koalas [@charlton2012], dogs [@taylor2010], and red deer [@reby2005], have been found to separate uniform scaling (size information) from the communicative information present in the signal [for review, @b20]. 
+
+## Why we wrote this paper, and why you might want to read it
+
+We believe that @NA07 is one of the most ground-breaking papers in speech perception that 'nobody has ever read'. As of the writing of this article, it had been cited less than 40 times over 17 years. During the same time, there have been 314,000 research articles on vowels. Over 17,000 of these mention vowel formants, vowel identification/categorization/recognition, and/or vowel/formant perception; over 5,000 additionally mention normalization. Among these articles, Lobanov normalization [@lobanov1971] is cited three- to four-times as often as Nearey’s STM or "uniform scaling" [@n78] and about 100-times more often than the PSTM [@NA07]---despite the fact that the latter is the only the only published article that describes *any* incremental inference model for vowel perception. So, here is a ground-breaking idea and promising candidate model of formant/spectral talker-normalization, with far-reaching consequences for research from typology to sociolinguistics to speech perception, ... and few seem to know of it. 
+
+<!-- 
+(vowel | vowels) ("vowel categorization" | "vowel recognition" | "vowel perception" | "vowel identification" | "formant perception" | "vowel formant" | "vowel formants") "normalization" "uniform scaling": 72
+
+(vowel | vowels) "Lobanov (1971)": 729
+(vowel | vowels) "Nearey (1978)": 195
+(vowel | vowels) "Nearey and Assman (2007)": 1
+
+(vowel | vowels) "Lobanov (1971)" normalization: 652
+(vowel | vowels) "Nearey (1978)" normalization: 178
+(vowel | vowels) "Nearey and Assman (2007)" normalization: 1
+(vowel | vowels) "probabilistic sliding template model" normalization: 5
+-->
+
+Why? @NA07 is a technical paper, written by experts for experts. It presents seven different models, without much explanation as to how they are derived, and no code to execute them. Even with access to additional notes kindly provided by the late Terrence Nearey, it took us days to verify some of the core theoretical results presented in @NA07. We imagine that the model is so underutilized in large parts because nobody knows how to implement it. Here we describe the PSTM and present a more fully Bayesian extension---the *Bayesian Sliding Template Model (BSTM)*---envisioned in @NA07 but not previously available. We walk through the logic of these models step by step and provide visualizations of core concepts. Our supplementary information (SI) contains detailed derivations for the most relevant models. The content of the present paper is still somewhat technical but sufficiently detailed to make it reproducible. To further facilitate adoption of the model by other researchers, we have implemented all models describe here in the R package `STM`. `STM` is designed to be user-friendly and flexible (constructive user feedback is welcome). The present article uses the `STM` package and is written in Quarto markdown. This markdown document, and all R code it sources, are available as part of the OSF repository at https://osf.io/tpwmv/. This allows interested researchers to re-create all of our analyses with the press of a button in RStudio [@R; @RStudio], and to apply similar analyses to their own data.
+
+A second reason as to why the PSTM has not received more attention is that it has not previously been tested against human perception. @NA07 primarily evaluated the PSTM in terms of its ability to recognize the vowel intended by the talker. However, as we also demonstrate below, a model of human speech perception should be evaluated in terms of its ability to predict *listeners' perception*, not talkers' intentions [for discussion, see @b20; @persson2025]. While @NA07 also presented initial qualitative comparisons of PSTM's predictions and listeners' perception, those comparisons leave open how good a model the PSTM is of human perception. Here, we address this question. We find that the incremental inference procedure proposed for the PSTM explains listeners' perception very well, and *substantially* better than the most frequently used normalization account (Lobanov). 
 
 # Perceptual normalization through uniform scaling {#sec-uniform}
 
@@ -78,7 +100,7 @@ v_means_hz = cbind(v_means_log[,1],exp(v_means_log[,2:3]))
 v_means_log[,1] = vs
 v_means_hz[,1] = vs
 
-nffs = normalize (h95[,c(4:6)],h95$speaker,h95$vowel)
+nffs = normalize (h95[,c(4:6)], h95$speaker, h95$vowel)
 template = create_template (nffs[,2:1], nffs$vowel)
 rownames(template$means) = vs
 
@@ -143,11 +165,13 @@ $$
 $$ {#eq-define-N}
 
 
+Such uniform scaling provides a comparatively parsimonious approach, assuming that listeners infer and store a single parameter. To put this into perspective, the perhaps the most commonly used normalization method in speech research---Lobanov normalization---assumes that listeners infer and store two parameters per feature. For instance, to model the effects of the first three formants at two time points in the vowel (as we do below), listeners would need to estimate twelve independent parameters. This linearly scaling complexity of Lobanov normalization is one of the reasons it might not be an adequate model for aspects of human speech perception that are thought to be evolutionary quite old [see above; for related discussion, see @b20; @b21; @persson2025]. 
+
 # The Probabilistic Sliding Template Model of vowel perception (PSTM)
 
 As anticipated above, listeners are assumed to learn dialect-specific vowel representations over the *normalized* vowel formants. These representations are assumed to capture the formant distributions that result for each vowel due to noise during the articulation and perception of formants. @NA07 referred to listeners' dialect-specific implicit knowledge about each vowel's formant distributions as "probabilistic templates".
 
-The probabilistic templates could be represented, for instance, as exemplar clouds [@johnson1997] or, in a more compact form, as parametric distributions [@NA07]. For computational tractability, we follow the latter approach, and represent vowel categories as multivariate Normal distributions over normalized formants, with mean vectors $\vec{\mu}_{\text{v}}$ and covariance matrices $\vec{\Sigma}_\text{v}$. We may then use the multivariate normal density (MVN) of each vowel to calculate the likelihood of any observed log-transformed formant input $\vec{G}$ given that vowel and the speaker-specific scaling parameter $\psi_s$. This can be done by either sliding the template as in @fig-uniform-scaling(d) above or, equivalently, by scaling the formants into the normalized template space:
+The probabilistic templates could be represented, for instance, as exemplar clouds [@johnson1997] or, in a more compact form, as parametric distributions [@NA07]. For computational tractability, we follow the latter approach and represent vowel categories as multivariate Normal distributions over normalized formants, with mean vectors $\vec{\mu}_{\text{v}}$ and covariance matrices $\vec{\Sigma}_\text{v}$. We may then use the multivariate normal density (MVN) of each vowel to calculate the likelihood of any observed log-transformed formant input $\vec{G}$ given that vowel and the speaker-specific scaling parameter $\psi_s$. This can be done by either sliding the template as in @fig-uniform-scaling(d) above or, equivalently, by scaling the formants into the normalized template space:
 
 $$
 P(\vec{G} | \mathrm{v}, \psi_s) := MVN (\vec{G} | \vec{\mu}_{\text{v}} + \vec{\psi}_s, \vec{\Sigma}_{\text{v}}) = MVN (\vec{G} - \vec{\psi}_s| \vec{\mu}_{\text{v}}, \vec{\Sigma}_{\text{v}}) = MVN (\vec{N} | \vec{\mu}_{\text{v}}, \vec{\Sigma}_{\text{v}})
@@ -178,11 +202,11 @@ This simple approach quickly becomes unfeasible even for researchers. First, est
 
 The same considerations make the approach in @eq-method-naive unsuitable for *listeners*. And, unlike researchers, listeners who encounter an unfamiliar talker do not have the luxury of waiting until they have observed a large amount of formant inputs from that talker: if normalization via uniform scaling is to aid robust speech perception, listeners must quickly arrive at adequate estimates of $\psi_s$---ideally within the very first instance of a vowel that they heard from the unfamiliar talker. If listeners were using something like @eq-method-naive to estimate $\psi_s$ for individual vowel tokens, their estimates of $\psi_s$ would vary substantially from trial to trial---depending also on which vowels the talker has produced. This would result in both highly inaccurate speech perception and very large changes to inferred speaker characteristics that themselves depend on $\psi_s$ (e.g., size and gender). Neither of these outcomes are observed in the literature.
 
-@NA07 addressed this issue by proposing several probabilistic approaches to $\psi_s$ estimation that do not rely on a balanced sample of the speakers entire vowel system. These models share two key methodological insights. First, they constrain estimates of $\psi_s$ given the listener's assumed phonological knowledge (i.e. the template). Second, listeners are assumed to have prior expectations about the distribution of $\psi_s$ depending on the acoustic and indexical characteristics of the talker. Here, we focus on three of the methods proposed by Nearey and Assmann (methods 2, 3, and 6). These methods differ only in their assumptions about listeners' prior expectations about $\psi_s$. Specifically, the three methods make increasingly stronger assumptions about the implicit knowledge that listeners have learned and stored about the distribution of $\psi_s$. By comparing how well these methods fit listeners' behavior, one can therefore test hypotheses about the type of implicit knowledge listeners have. Before we turn to the differences between the three methods, we describe their shared characteristics.
+@NA07 addressed this issue by proposing several probabilistic approaches to $\psi_s$ estimation that do not rely on a balanced sample of the speaker's entire vowel system. These models share two key methodological insights. First, they constrain estimates of $\psi_s$ given the listener's assumed phonological knowledge (i.e. the template). Second, listeners are assumed to have prior expectations about the distribution of $\psi_s$ depending on the acoustic and indexical characteristics of the talker. Here, we focus on three of the methods proposed by Nearey and Assmann (methods 2, 3, and 6). These methods differ only in their assumptions about listeners' prior expectations about $\psi_s$. Specifically, the three methods make increasingly stronger assumptions about the implicit knowledge that listeners have learned and stored about the distribution of $\psi_s$. By comparing how well these methods fit listeners' behavior, one can therefore test hypotheses about the type of implicit knowledge listeners have. Before we turn to the differences between the three methods, we describe their shared characteristics.
 
 ## Estimating $\psi_s$ using prior expectations about vowel templates and $\psi_s$ {#sec-shared}
 
-Methods 2, 3, and 6 share that they estimate the *maximum a posteriori* (MAP) value of $\psi_s$. @NA07 did not provide the derivation of these MAP estimates but they are based on the posterior distribution of $\psi_s$ given the observed formant pattern, the vowel category, and the listener's prior expectations about the distributions of $\psi_s$ and vowel categories:
+Methods 2, 3, and 6 share that they estimate the *maximum a posteriori* (MAP) value of $\psi_s$. @NA07 did not provide the derivation of these MAP estimates, but they are based on the posterior distribution of $\psi_s$ given the observed formant pattern, the vowel category, and the listener's prior expectations about the distributions of $\psi_s$ and vowel categories:
 
 $$
 P(\psi_s | \vec{G}, \text{v}_j) =
@@ -190,7 +214,7 @@ P(\psi_s | \vec{G}, \text{v}_j) =
 {\sum_{i=1}^V P(\vec{G} | \text{v}_i, \psi_s) \cdot P(\psi_s) \cdot P(\text{v}_i)}
 $$ {#eq-posterior-psi}
 
-As per @eq-posterior-G, the likelihood $P(\vec{G} | \text{v}, \psi_{s})$ given the vowel category and $\psi_s$ is assumed to be a multivariate normal distribution. Researchers can estimate the mean $\vec{\mu}_v$ and covariance matrix $\vec{\Sigma}_v$ for each vowel category based on any reasonably-sized database of vowel formants from the dialect(s) that the listener is assumed to have learned their template(s) from.^[@NA07 calculated a single shared covariance matrix across all vowel categories. Here, we use separate covariance matrices for each vowel category. The `STM` library supports both options.] Similarly, $P(\text{v})$, can be calculated from relevant speech corpora or, for many experimental contexts, assumed to be equal across all categories and ignored in the calculation.
+As per @eq-posterior-G, the likelihood $P(\vec{G} | \text{v}, \psi_{s})$ given the vowel category and $\psi_s$ is assumed to be a multivariate normal distribution. Researchers can estimate the mean $\vec{\mu}_v$ and covariance matrix $\vec{\Sigma}_v$ for each vowel category based on any reasonably sized database of vowel formants from the dialect(s) that the listener is assumed to have learned their template(s) from.^[@NA07 calculated a single shared covariance matrix across all vowel categories. Here, we use separate covariance matrices for each vowel category. The `STM` library supports both options.] Similarly, $P(\text{v})$, can be calculated from relevant speech corpora or, for many experimental contexts, assumed to be equal across all categories and ignored in the calculation.
 
 The posterior distribution in @eq-posterior-psi can be used to obtain separate MAP estimates of $\psi_s$ for each vowel category, $\hat{\psi}_{s, \text{v}}$. A vowel system with $V$ vowels would result in $V$ MAP estimates $\hat{\psi}_{s, \text{v}}$:
 
@@ -211,7 +235,7 @@ P(\text{v}_j | \vec{G}, \hat{\psi}_{s,\text{v}=j}) =
 {\sum_{i=1}^V P(\vec{G} | \text{v}_i, \hat{\psi}_{s,\text{v}=i}) \cdot P(\psi_s = \hat{\psi}_{s,\text{v}=i}) \cdot P(\text{v}_i)}
 $$ {#eq-posterior-vowel}
 
-These $\psi_{s,\text{v}}$ are then used to categorize the formant input. Specifically, listeners are assumed to infer the $\hat{\psi}_s$ with the highest MAP, and to use this $\hat{\psi}_s$ to categorize the input as the vowel category with the maximum posterior density (@eq-criterion-psi-and-vowel). Nearey and Assmann describe this process as "choose the vowel that looks best when it tries to look its best" (p. 253).
+These $\psi_{s,\text{v}}$ are then used to categorize the formant input into a winning category, $c$. Specifically, listeners are assumed to infer the $\hat{\psi}_s$ with the highest MAP, and to use this $\hat{\psi}_s$ to categorize the input as the vowel category with the maximum posterior density (@eq-criterion-psi-and-vowel). Nearey and Assmann describe this process as "choose the vowel that looks best when it tries to look its best" (p. 253).
 
 $$
 \begin{align}
@@ -231,7 +255,7 @@ $$
 \end{align}
 $$ {#eq-method2}
 
-Using a uniform prior on $\psi_s$ means our 'best' estimate of $\psi_s$ may be rather implausible, as long as it provides a good fit to one of our categories. For example, @fig-slidingtemplate2 presents the likelihood functions $P( \vec{G}_x | \text{v}_i, \hat{\psi}_{s})$ from @eq-method2 for four vowel hypotheses, along with different interpretations of an ambiguous vowel according the MAP estimates $\hat{\psi}_{s, \text{v}}$ for the four vowels. Because the prior exerts no influence on the posterior, the likelihoods and posteriors share the same relative shapes in this case. As a result, this model suggests that an interpretation of /o/, along with a value of $\hat{\psi}_s=7.64$, is among the plausible solutions. As we shall see in the next section, however, a value of $\hat{\psi}_s=7.64$ is *a priori* highly implausible, and method 3 takes this into account.
+Using a uniform prior on $\psi_s$ means that our 'best' estimate of $\psi_s$ can be rather implausible, as long as it provides a good fit to one of our categories. For example, @fig-slidingtemplate2 presents the likelihood functions $P( \vec{G}_x | \text{v}_i, \hat{\psi}_{s})$ from @eq-method2 for four vowel hypotheses, along with different interpretations of an ambiguous vowel according the MAP estimates $\hat{\psi}_{s, \text{v}}$ for the four vowels. Because the prior exerts no influence on the posterior, the likelihoods and posteriors share the same relative shapes in this case. As a result, method 2 suggests that /o/, /ɑ/, and /ʌ/ are all among the probable solutions. As we show next, however, some of these vowels would result in estimates of $\psi$ that are *a priori* highly improbable (e.g., for /o/, $\hat{\psi}_s=7.64$). Method 3 takes this into account.
 
 ```{r figure2, eval = TRUE}
 #| fig-height: 4
@@ -242,7 +266,7 @@ Using a uniform prior on $\psi_s$ means our 'best' estimate of $\psi_s$ may be r
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-slidingtemplate2
-#| fig-cap: "(a) A formant input \"x\", relative to four possible ways of sliding the dialect template, corresponding to four different values of $\\hat{\\psi}_s$. The template 'slides' along lines parallel to $G1=G2$, indicated on the figure. (b) Alternatively, the vowel can be thought of 'sliding' across the normalized template. The line indicates the possible interpretations of the point in (a), ellipses enclose one standard deviation. Points indicate the best possible locations for /ɑ/ (1), /ʌ/ (4), /c/ (3), and /o/ (4) according to method 2. These interpretations correspond to the different vowel spaces in (a). (c) Posterior distributions of $\\psi_s$ given different vowel categories. Because the prior in method 2 exerts no influence, these posteriors are proportional to the likelihood: $P(\\vec{G}_x | \\text{v}_i, \\hat{\\psi}_{s})$. Thus, these curves represent the values of the densities of the distributions in (b) along the line. These likelihoods highlight the relationship between categorization and $\\psi_s$ estimation."
+#| fig-cap: "(a) A formant input \"x\", relative to four possible ways of sliding the dialect template, corresponding to four different values of $\\hat{\\psi}_s$. The template 'slides' along lines parallel to $G1=G2$, indicated on the figure. (b) Alternatively, the vowel can be thought of 'sliding' across the normalized template. The line indicates the possible interpretations of the point in (a), ellipses enclose one standard deviation. Points indicate the best possible locations for /ɑ/ (1), /c/ (2), /o/ (3), and /ʌ/ (4), according to method 2. These interpretations correspond to the different vowel spaces in (a). (c) Posterior distributions of $\\psi_s$ given different vowel categories. Because the prior in method 2 exerts no influence, these posteriors are proportional to the likelihood: $P(\\vec{G}_x | \\text{v}_i, \\hat{\\psi}_{s})$. Thus, these curves represent the values of the densities of the distributions in (b) along the line. These likelihoods highlight the relationship between categorization and $\\psi_s$ estimation."
 
 ##############
 
@@ -286,7 +310,7 @@ psi3 = psiss[3,1]
 psi9 = psiss[9,1]
 psi11 = psiss[11,1]
 
-par (mar = c(4.5,4.5,1,1), mfrow = c(1,3))
+par (mar = c(4.5,4.7,1,1), mfrow = c(1,3))
 
 plot (0,ylim = c(.30,-1.1)+7, xlim = c(1.35,-.15)+7, type = 'n', xlab= "G2 (log Hz)",
       ylab = "G1 (log Hz)", cex.axis=1.3,cex.lab=1.3)
@@ -301,6 +325,7 @@ text (v_means_normd[,2:3]+psi11[1], labels = v_means_log[,1], cex = 2.5,
       col = cols[v_densities_to_make[4]])
 points (vowel[1], vowel[2], pch=4, lwd=3, cex=2, col="black")
 abline (0,1)
+legend ("topleft", "(a)", bty='n', cex=1.5, adj = 1)
 
 plot (0,ylim = c(-.30,-1.35), xlim = c(.8,-.45), type = 'n', 
       xlab= "N2 (scaled log Hz)", ylab = "N1 (scaled log Hz)", cex.axis=1.3, cex.lab=1.3)
@@ -314,6 +339,7 @@ points (vowel[1]-psi2[1], vowel[2]-psi2[1], pch="1", lwd=3, cex=2.5, col="black"
 points (vowel[1]-psi3[1], vowel[2]-psi3[1], pch="2", lwd=3, cex=2.5, col="black")
 points (vowel[1]-psi9[1], vowel[2]-psi9[1], pch="3", lwd=3, cex=2.5, col="black")
 points (vowel[1]-psi11[1], vowel[2]-psi11[1], pch="4", lwd=3, cex=2.5, col="black")
+legend ("topright", "(b)", bty='n', cex=1.5, adj = 0)
 
 plot (psis, v_densities[,1], ylim = c(0,25), type = 'l',
       col=cols[v_densities_to_make[1]], lwd = 4, cex.axis = 1.3, cex.lab= 1.3,
@@ -329,6 +355,7 @@ text (psi2[1], 5, v_means_log[2,1], col=cols[v_densities_to_make[1]], cex=3)
 text (psi3[1], 3, v_means_log[3,1], col=cols[v_densities_to_make[2]], cex=3)
 text (psi9[1], 5, v_means_log[9,1], col=cols[v_densities_to_make[3]], cex=3)
 text (psi11[1], 9, v_means_log[11,1], col=cols[v_densities_to_make[4]], cex=3)
+legend ("topleft", "(c)", bty='n', cex=1.5, adj = 1)
 ```
 
 
@@ -345,7 +372,7 @@ $$
 \end{align}
 $$ {#eq-method3}
 
-Just like the multivariate Normal distributions for the vowel templates, estimates of $\mu_{\psi_s}$ and $\sigma_{\psi_s}$ can be obtained from a reasonably-sized database. @NA07 suggest $\hat{\mu}_{\psi_s}=7.23$ and $\hat{\sigma}_{\psi_s}=0.128$ based a database of 265 speakers of US English (86 adult females, 88 adult males, 91 children) from three dialect regions [@h95; @pb52; @ak00].^[Alternatively, researchers may use other data sources to replace or refine these estimates.] The two leftmost columns of @fig-slidingtemplate3 compare methods 2 and 3, showing that posterior probabilities can be affected even by comparatively weak constraints on the prior of $\psi_s$. This includes the fact that a value of $\hat{\psi}_s= 7.64$ is *a priori* implausible.
+Just like the multivariate Normal distributions for the vowel templates, estimates of $\mu_{\psi_s}$ and $\sigma_{\psi_s}$ can be obtained from a reasonably sized database. @NA07 suggest $\hat{\mu}_{\psi_s}=7.23$ and $\hat{\sigma}_{\psi_s}=0.128$ based a database of 265 speakers of US English (86 adult females, 88 adult males, 91 children) from three dialect regions [@h95; @pb52; @ak00].^[Alternatively, researchers may use other data sources to replace or refine these estimates.] The two leftmost columns of @fig-slidingtemplate3 compare methods 2 and 3, showing that posterior probabilities can be affected even by comparatively weak constraints on the prior of $\psi_s$. This includes the fact that a value of $\hat{\psi}_s= 7.64$ is *a priori* improbable because it is more than 3 standard deviations higher than the mean of the prior distribution.
 
 ```{r figure3, eval = TRUE}
 #| fig-height: 6
@@ -385,7 +412,13 @@ for (i in 1:4){
   plot (psis, v_densities[,1], ylim = c(0,25), type = 'l', xaxs = 'i',
         col = cols[v_densities_to_make[1]], lwd = 4, xaxt = 'n', 
         yaxt = 'n', xlab = NA)
-  if (i==1)   mtext (side = 2, "Likelihood", line = 0.3, xaxs='i', yaxs='i')
+  if (i==1) { 
+    mtext (side = 2, "Likelihood", line = 0.3, xaxs='i', yaxs='i')
+    text (psi2[1], 5, v_means_log[2,1], col=cols[v_densities_to_make[1]], cex=3)
+    text (psi3[1], 3, v_means_log[3,1], col=cols[v_densities_to_make[2]], cex=3)
+    text (psi9[1], 5, v_means_log[9,1], col=cols[v_densities_to_make[3]], cex=3)
+    text (psi11[1], 9, v_means_log[11,1], col=cols[v_densities_to_make[4]], cex=3)
+  }
   lines (psis, v_densities[,2], col = cols[v_densities_to_make[2]],lwd=4)
   lines (psis, v_densities[,3], col = cols[v_densities_to_make[3]],lwd=4)
   lines (psis, v_densities[,4], col = cols[v_densities_to_make[4]],lwd=4)
@@ -452,7 +485,7 @@ Using the same database of speakers from method 3, Nearey and Assmann obtained $
 
 ## Implementation {#sec-implementation}
 
-@NA07 note that, for the models they provide, "analytic solutions to the optimizations are available and no search is necessary" (p. 252). However, they did not provide details regarding these analytic solutions. Here, we provide the general approach to finding analytic solutions to the maximization of the posterior density of $\psi_s$ for each vowel category. We focus on the derivation for method 6, as methods 3 and 2 comprise a subset of the necessary calculations. To find the MAP estimates $\hat{\psi}_{s, \text{v}}$ for each vowel, we must calculate the product of the densities in @eq-method6-solve for each vowel, and find the maximum. The complete derivation is provided in the supplemental online materials.
+@NA07 note that, for the models they provide, "analytic solutions to the optimizations are available and no search is necessary" (p. 252). However, they did not provide details regarding these analytic solutions. Here, we provide the general approach to finding analytic solutions to the maximization of the posterior density of $\psi_s$ for each vowel category. We focus on the derivation for method 6, as methods 3 and 2 comprise a subset of the necessary calculations. To find the MAP estimates $\hat{\psi}_{s, \text{v}}$ for each vowel, we must calculate the product of the densities in @eq-method6-solve for each vowel and find the maximum. The complete derivation is provided in the supplemental online materials.
 
 $$
 \begin{align}
@@ -486,28 +519,30 @@ P(\text{v}_j | \vec{G}) = \frac{\int P(\vec{G} | \text{v}_j, \psi_s) \cdot P(\ps
 {\sum_{i=1}^V \int P(\vec{G} | \text{v}_i, \psi_s) \cdot P(\psi_s) \cdot P(\text{v}_i) \, d\psi}
 $$ {#eq-BSTM-posterior-psi-and-vowel}
 
-Compared to focusing on MAP estimates of $\psi_s$, consideration of the posterior distribution in @eq-BSTM-posterior-joint-psi-and-vowel takes into account the uncertainty about the $\hat{\psi}_{s, \text{v}}$ for different vowel categories. This results in a model of vowel perception that is more in line with Bayesian principles, suggesting the name Bayesian Sliding Template Model (BSTM) for this version of the PSTM. It is, of course, an empirical question whether *listeners' behavior* is better explained by this more fully Bayesian model---a question to which we turn next.
+Compared to focusing on MAP estimates of $\psi_s$, consideration of the posterior distribution in @eq-BSTM-posterior-joint-psi-and-vowel takes into account the uncertainty about the $\hat{\psi}_{s, \text{v}}$ for different vowel categories. This results in a model of vowel perception that is more in line with Bayesian principles, suggesting the name Bayesian Sliding Template Model (BSTM) for this version of the PSTM. By calculating the full posterior distribution of $\hat{\psi}_{s}$ rather than just MAP estimates, the BSTM allows optimal information integration across multiple vowel tokens. This will allow future work to model the iterative estimation and refinement of $\hat{\psi}_{s}$ across vowel observations, something which is not possible with the original PSTM. It is, of course, an empirical question whether *listeners' behavior* is better explained by this more fully Bayesian model---a question to which we turn next.
 
 # Bootstrap Evaluation {#sec-bootstrap}
 
 To compare the performance of different implementations of the STM in understanding perceptual vowel normalization, we conduct a bootstrap analysis using data on the perception of US English vowels [@h95]. A step-by-step walk-through of the analysis is available as an R Markdown document as part of the OSF repo for this paper. As demonstrated in that vignette, the `STM` package allows researchers to conduct the type of analysis we present here on their own data, with just a handful of R commands. 
 
-The @h95 data include acoustic measures from 139 speakers producing twelve vowels each, including formant measures at multiple time slices. This data also contains 12-alternative forced-choice categorization responses for each vowel token, aggregated across 20 listeners of the same dialect as the speakers (average accuracy = 95%).^[The data used to estimate vowel templates should be carefully chosen to reflect the sort of listener of interest to the researcher. For example, a template trained on a database of Canadian English will not be suitable to model the perception of an Irish English listener [cf. discussion in @persson2024].] Crucially, these responses were elicited over stimuli from the different speakers in the database, presented  in randomized order---i.e., precisely the type of input for which the naive estimation of $\psi_s$ (@eq-method-naive) would yield utterly unreliable results for listeners (as we confirm below).
+The @h95 data include acoustic measures from 139 speakers producing twelve vowels each, including formant measures at multiple time slices. This data also contains 12-alternative forced-choice categorization responses for each vowel token, aggregated across 20 listeners of the same dialect as the speakers (average accuracy = 95%).^[The data used to estimate vowel templates should be carefully chosen to reflect the sort of listener of interest to the researcher. For example, a template trained on a database of Canadian English will not be suitable to model the perception of an Irish English listener [cf. discussion in @persson2025].] Crucially, these responses were elicited over stimuli from the different speakers in the database, presented  in randomized order---i.e., precisely the type of input for which the naive estimation of $\psi_s$ (@eq-method-naive) would yield utterly unreliable results for listeners (as we confirm below).
 
 
 ## Approach
 
-For each bootstrap data set, we compare approaches based on two performance metrics:
+For each bootstrap data set, we compare approaches based on three performance metrics:
 
   A) The **likelihood of *listeners'* categorization responses ** $\Lambda:=\sum_{i=1}^{m} \sum_{j=1}^{n} C_{ij} \cdot \log (P_{ij})$, where $C_{ij}$ is the number of times token $i$ was classified as vowel category $j$, and $\log (P_{ij})$ is the log-transformed posterior probability for token $i$ and category $j$. This is the critical measure of how well a method describes listeners' categorization behavior.
 
-  B) The **likelihood of the vowel category that the *talker intended to produce* ** (or, specifically, that the experimenter asked the talker to produce). This metric is closer to what a speech engineer would choose to evaluate normalization methods, as it measures how well the method performs in recognizing the *intended* vowel category. While this metric does *not* assess how well a method explains speech perception, it provides an important comparison, as we explain below. 
+  B) The **likelihood of the vowel category that the *talker intended to produce** (or, specifically, that the experimenter asked the talker to produce). This metric is closer to what a speech engineer would choose to evaluate normalization methods, as it measures how well the method performs in recognizing the *intended* vowel category. While this metric does *not* assess how well a method explains speech perception, it provides an important comparison, as we explain below. 
 
   C) The **root-mean square (RMS) error in estimating $\psi_s$** compared to an estimate of $\hat{\psi}$ obtained from a balanced sample of each speaker's entire vowel system, and @eq-method-naive. Ultimately, researchers interested in assessing how well a method describes listeners' estimation of $\psi_s$ should compare each method's predictions for $\hat{\psi}_s$ against listeners' estimates.
 
-The following process was used, over 1000 bootstrap iterations for each method (all functions referred to are from the `STM` package):
+Of note, the use of likelihood as a metric to assess A) the fit against listeners' perception and B) the intended category differs from the approach in @NA07. Nearey and Assman instead used the accuracy (under the criterion choice rule) of predicting the intended category label for B) and, critically, did not evaluate against listeners' perception. The use of accuracy as a metric is now understood to be problematic, as it does not capture how well a model predicts the *distribution* of responses [for discussion, @persson2025]. Indeed, we find that our choice of a more adequate evaluation metric leads to a clearer result.
 
-1.  Randomly divide the data into a 79-speaker training set and a 60 speaker testing set. Resample the training data (with replacement) at the speaker level . Sixty-three vowel tokens (4%) had one or two missing formant measurements (out of 6), representing 0.09% of the total formant measurements in the data. The missing values were imputed using linear models (using the `impute_NA` function).
+We used the following process, repeated over 1000 bootstrap iterations for each method (all functions referred to are from the `STM` package):
+
+1.  Randomly divide the data into a 79-speaker training set and a 60-speaker testing set. Resample the training data (with replacement) at the speaker level. Sixty-three vowel tokens (4%) had one or two missing formant measurements (out of 6), representing 0.09% of the total formant measurements in the data. The missing values were imputed using stochastic regression imputation, independently for each iteration (using the `impute_NA` function).
 
 2.  Normalize the training data using log-mean uniform scaling normalization (the `normalize` function). This means estimating $\psi_s$ for each speaker using their complete vowel system as in @eq-method-naive, and normalizing as in @eq-define-N.
 
@@ -517,7 +552,7 @@ The following process was used, over 1000 bootstrap iterations for each method (
 
 5.  Calculate performance metrics A)-C) described above.
 
-We compare ten different methods that differ in terms of how they estimate $\psi_s$, and whether they estimate $\psi_s$ at all:
+We compare 11 different methods that differ in terms of how they estimate $\psi_s$, and whether they estimate $\psi_s$ at all. Some of these were included in @NA07, others were not (incl. the popular Lobanov method):
 
  + **No normalization**
    + input is $\vec{F}$ (Hz)
@@ -526,6 +561,9 @@ We compare ten different methods that differ in terms of how they estimate $\psi
  + **Normalization with $\hat{\psi}_s$ estimated using the 'classic approach'** in @eq-method-naive [method 1 from @NA07]
    + over the entire training data (*PSTM1 (balanced data)*)
    + based on the individual token (*PSTM1 (single trial)*), as a more direct baseline for the remaining methods (all of which are based on individual tokens)
+
+ + **Normalization using the most commonly used normalization method [@lobanov1971] ** 
+   + using the entire training data (Hz). This method involves standardization of each speaker's formants by subtracting the mean and dividing by the standard deviation of each formant, independently for each time point. 
 
  + **Normalization with $\hat{\psi}_s$ estimated using *PSTM* **
    + method 2
@@ -546,6 +584,7 @@ The results of the bootstrap analysis are presented in @fig-bootboxplot. Method 
 ```{r load-b, eval = TRUE, echo = FALSE}
 load ("simulation_data/hz_sim.RData")
 load ("simulation_data/hz_log_sim.RData")
+load ("simulation_data/lobanov_sim.RData")
 load ("simulation_data/PSTM1_single_sim.RData")
 load ("simulation_data/PSTM1_sim.RData")
 load ("simulation_data/BSTM6_sim.RData")
@@ -563,85 +602,110 @@ load ("simulation_data/PSTM2_sim.RData")
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-bootboxplot
-#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and BSTM method 6 across bootstrap iterations. Points indicate bootstrap means, intervals indicate lower 95% quantiles. Log-likelihoods for the single-trial application of balanced-data method 1 were more than an order of magnitude lower than all other log-likelihoods and thus do not show. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners' responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$. This leaves open which approach best predicts *listeners'* $\\hat{\\psi}_s$ (to which we have no access here). Methods without normalizatin (Hz and log-Hz) are not shown since they do not provide estimates of $\\psi_s$."
+#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and BSTM method 6 across bootstrap iterations. Points indicate bootstrap means; intervals indicate lower 95% quantiles. Arrows indicate the direction of log-likelihoods for the single-trial application of balanced-data method 1. These were more than an order of magnitude lower than all other log-likelihoods and thus do appear on the plot. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$. This leaves open which approach best predicts *listeners'* $\\hat{\\psi}_s$ (to which we have no access here). Methods without normalization (Hz and log-Hz) are not shown since they do not provide estimates of $\\psi_s$."
 
 ######
 
-loglik = cbind(hz_loglikelihoods,hz_log_loglikelihoods,
-               PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
-               PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
-               BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
+loglik = 
+  cbind(hz_loglikelihoods,hz_log_loglikelihoods,
+        lobanov_loglikelihoods,
+        PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
+        PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
+        BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
 
-loglik_intended = cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
-               PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
-               PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
-               PSTM6_intended_loglikelihoods,
-               BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
-               BSTM6_intended_loglikelihoods)
+loglik_intended = 
+  cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
+        lobanov_intended_loglikelihoods,
+        PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
+        PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
+        PSTM6_intended_loglikelihoods,
+        BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
+        BSTM6_intended_loglikelihoods)
 
 rmss = cbind(PSTM1_single_rmss, 
              PSTM2_rmss,PSTM3_rmss,PSTM6_rmss,
              BSTM2_rmss,BSTM3_rmss,BSTM6_rmss)
 
 
-loglik_diffs = (loglik - loglik[,10])
-loglik_intended_diffs = (loglik_intended - loglik_intended[,10])
+loglik_diffs = (loglik - loglik[,11])
+loglik_intended_diffs = (loglik_intended - loglik_intended[,11])
 rmss_diffs = (rmss - rmss[,7])
 
 probs_interval_loglik <- c(0.0, 0.95)
 probs_interval_rms <- c(0.05, 1)
 
-par (mfcol = c(1,3), mar = c(5,.2,.1,.2), oma = c(0.6,9.1,0.2,0.1))
+par (mfcol = c(1,3), mar = c(5,.2,.1,.2), oma = c(0.6,9.1,2.2,0.2))
 
-labels = c("Hz","log-Hz","PSTM1\n(balanced data)","PSTM1\n(single trial)",
+labels = c("Hz","log-Hz","Lobanov","PSTM1\n(balanced data)",
+           "PSTM1\n(single trial)",
            "PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
+cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
+         "grey60","black","grey60","grey60","black")
 
-bmmb::brmplot (brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik), 
-               labels = labels, ylab = "",line=FALSE,cex.axis=1.4,cex.lab=1.4,
-               xlab = "",
-               xlim = c(-1500,0), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+bmmb::brmplot (
+  brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik),
+  labels = labels, ylab = "",line=FALSE,cex.axis=1.4,cex.lab=1.4,
+  xlab = "", xlim = c(-5000,0), las = 1, horizontal=FALSE, cex=2, 
+  col = cols)
+
 abline (v=0,lty=3,col="black")
-legend("bottomleft", legend="(a)", bty="n", cex=1.5)
+#legend("bottomleft", legend="(a)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
+mtext (side=3,"(a) Predicting Perceived Category",line=0.2)
+arrows (x0 = -4500, x1 = -5000, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
-bmmb::brmplot (brms::posterior_summary(loglik_intended_diffs, 
-                                       prob = probs_interval_loglik), 
-               labels = "", ylab = "",line=FALSE,cex.axis=1.4,cex.lab=1.4,
-               xlab = "",
-               xlim = c(-2000,2000), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+cols = c("grey60","grey60","black","grey60","grey60","grey60",
+         "grey60","grey60","grey60","grey60","grey60")
+
+bmmb::brmplot (
+  brms::posterior_summary(loglik_intended_diffs, prob = probs_interval_loglik),
+  labels = "", ylab = "",line=FALSE,cex.axis=1.4,cex.lab=1.4,
+  xlab = "",xaxt = 'n', xlim = c(-1750,3000), las = 1, horizontal=FALSE,
+  cex=2, col = cols)
+
 abline (v=0,lty=3,col="black")
-legend("bottomleft", legend="(b)", bty="n", cex=1.5)
+#legend("bottomleft", legend="(b)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
+axis (side=1, cex.axis=1.4, at = c(-1000,0,1000,2000))
+mtext (side=3,"(b) Predicting Intended Category",line=0.2)
+arrows (x0 = -1250, x1 = -1750, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
+cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
+         "grey60","black","grey60","grey60","black")
 
-par (mar = c(5,.2,8,.2))
+par (mar = c(5,.2,11.5,.2))
 
 labels = c("PSTM1\n(single trial)","PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
 
 tmp = brms::posterior_summary(rmss, prob = probs_interval_rms)
 tmp_diff = brms::posterior_summary(rmss_diffs, prob = probs_interval_rms)
 
-bmmb::brmplot (tmp, labels = "", ylab = "", xlab = "RMS error in ψ estimation",
-               line=FALSE,cex.axis=1.4,cex.lab=1.5,
-               xlim = c(0,.15), las = 1, horizontal=FALSE, cex=1.75, col = "grey30")
+bmmb::brmplot (
+  tmp, labels = "", ylab = "", xlab = "RMS error in ψ estimation",
+  line=FALSE,cex.axis=1.4,cex.lab=1.5, xlim = c(0,.15), las = 1,
+  horizontal=FALSE, cex=2, col = cols[-c(1:4)])
+
 abline (v=0,lty=3,col="black")
-legend("bottomright", legend="(c)", bty="n", cex=1.5)
+#legend("bottomright", legend="(c)", bty="n", cex=1.5)
+mtext(side = 3, expression('(c)' ~ Predicting ~ psi[s]), line = 0.2)
+
 ```
 
-Of particular note, method 6 provides a better fit to listeners' responses than the 'classic' approach over balanced data [method 1 in @NA07].^[This finding---that method 6 outperforms the classic approach in predicting listeners' responses---differs from @NA07. In separate analyses not reported here, we confirmed that this difference in results is due to the goodness-of-fit metric employed by Nearey and Assman: the accuracy (under the criterion choice rule) of predicting listeners' most common response to a stimulus. This metric is now understood to be problematic [for discussion, @persson2024]. By using a more adequate metric---the log-likelihood of listeners' responses---we revise one of the more puzzling findings of @NA07.] This is of note because the classic approach---which estimates $\psi_s$ from the balanced and complete training data---has access to far more speaker-specific information than method 6. As a consequence, the classic approach achieves the best performance in predicting the vowel category that the *talker intended to produce* (see @fig-bootboxplot(b)). Yet, the classic approach does *not* provide the best explanation for listeners' categorization responses. This highlights what should be obvious---and yet is often ignored in research on normalization: that listeners do not have access to a large and balanced set of vowel productions from a talker when they first encounter them. Effective speech perception thus requires mechanisms that can incrementally infer the relevant quantities (here $\psi_s$) based on prior expectations and other available information (e.g., $f0$, as in method 6).
+Of particular note, method 6 provides a better fit to listeners' responses than the 'classic' approach over balanced data [method 1 in @NA07]. This is of note because the classic approach---which estimates $\psi_s$ from the balanced and complete training data---has access to far more speaker-specific information than method 6. As a consequence, the classic approach achieves the best performance in predicting the vowel category that the *talker intended to produce* (see @fig-bootboxplot(b)). Yet, the classic approach does *not* provide the best explanation for listeners' categorization responses. This highlights what should be obvious---and yet is often ignored in research on normalization: that listeners do not have access to a large and balanced set of vowel productions from a talker when they first encounter them. Effective speech perception thus requires mechanisms that can incrementally infer the relevant quantities (here $\psi_s$) based on prior expectations and other available information (e.g., $f0$, as in method 6).
+
+As anticipated above, this finding---that method 6 outperforms the classic approach in predicting listeners' responses---differs from @NA07. This is evident from the fact that the classic approach excels at prediction of *intended* category (measure B), a metric that is closer to that used in @NA07. Just how well method 6 performs is further highlighted by the comparison against the normalization approach that arguably remains the most popular, Lobanov normalization. While Lobanov normalization provides the best fit to the intended vowel category, it is one of the worst models of listener responses. This lends additional emphasis to a point we have made elsewhere: just because a normalization procedure excels at reducing cross-talker formant variability this does *not* necessarily mean it is an adequate model of human perception [e.g., @b21; @persson2025].
 
 Method 6 also outperforms method 1 when the latter is applied trial-by-trial. We included this variant of method 1 [not considered in @NA07] as a more direct baseline to the single-trial methods 2, 3, and 6. The fact that the single-trial variant of method 1 performs so poorly that it is not even visible in  @fig-bootboxplot (a) validates the issues we raised in section @sec-methods about method 1: it would lead to highly unstable vowel perception, and listeners do not seem to use it. 
 
-Finally, another appealing feature of the STM is that it provides estimates of $\psi_s$ 'for free', naturally tying together speech perception and the perception of speaker size. Here, we do not have access to listeners' estimates of $\psi_s$, and thus cannot directly compare the different methods against that ground truth. We can, however, compare how accurately the incremental P/BSTM methods estimate the $\psi_s$ that would results from calculating $\psi_s$ over the entire data from the talker (i.e., our best estimate of that $\psi_s$). As shown in  @fig-bootboxplot (c), method 6 again performed best, and achieved the lowest RMS errors in $\hat{\psi}_s$ estimation compared to methods 2 and 3. 
+Finally, another appealing feature of the STM is that it provides estimates of $\psi_s$ 'for free', naturally tying together speech perception and the perception of speaker size. Here, we do not have access to listeners' estimates of $\psi_s$, and thus cannot directly compare the different methods against that ground truth. We can, however, compare how accurately the incremental P/BSTM methods estimate the $\psi_s$ that would result from calculating $\psi_s$ over the entire data from the talker (i.e., our best estimate of that $\psi_s$). As shown in  @fig-bootboxplot (c), method 6 again performed best, and achieved the lowest RMS errors in $\hat{\psi}_s$ estimation compared to methods 2 and 3. 
 
 # Conclusions and Future Directions
 
-Almost two decades after its introduction, the PSTM remains the only published fully spelled-out model of incremental formant normalization and vowel perception. By making available the code for this model in the form of an R library, we hope to make the advantages of the PSTM and its extensions more accessible to other researchers. The PSTM's approach to normalization, uniform scaling, is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons [reviewed in @b20]. The log-mean method of uniform scaling has been consistently found to provide a better fit against listeners' perception than other influential methods, such as Lobanov normalization [@b21; @persson2024; @richter2017]. 
+Almost two decades after its introduction, the PSTM remains the only published fully spelled-out model of incremental formant normalization and vowel perception. By making available the code for this model in the form of an R library, we hope to make the advantages of the PSTM and its extensions more accessible to other researchers. The PSTM's approach to normalization, uniform scaling, is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons [reviewed in @b20]. The log-mean method of uniform scaling has been consistently found to provide a better fit against listeners' perception than other influential methods, such as Lobanov normalization [@b21; @persson2025; @richter2017]. Here, we show that the predictive power of the PSTM improves further, and in non-subtle ways, once the *incremental* inferences listeners need to make are adequately modeled.
 
-<!-- SB: the results now show only method 6 is substantially better so I changed this accordingly.
-Our bootstrap simulations confirm that *all* of the incremental methods proposed by @NA07 provide a better model of human perception than a model without normalization.--> Our bootstrap simulations confirm that method 6---which assumes that listeners consider both intrinsic and extrinsic information in guiding their prior expectations about $\psi_s$---best explains listeners' behavior in the data from @h95. The new BSTM, a more fully Bayesian extension of the PSTM, performed similarly to the original PSTM---both in terms of the ability to capture listeners' perception of vowels, and in terms of estimating the uniform scaling parameter $\psi_s$. 
+Our bootstrap simulations confirm that method 6---which assumes that listeners consider both intrinsic and extrinsic information in guiding their prior expectations about $\psi_s$---best explains listeners' behavior in the data from @h95. The new BSTM, a more fully Bayesian extension of the PSTM, performed similarly to the original PSTM---both in terms of the ability to capture listeners' perception of vowels, and in terms of estimating the uniform scaling parameter $\psi_s$. However, the BSTM has the advantage of providing the full posterior distribution over $\psi_s$ and the vowel category, allowing ideal information integration across multiple observations from the same talker. This is a critical feature for a model of speech perception as it will allow for the investigation of process of adaptation to speakers across increasing amounts of information.
 
-In future work we plan to expand evaluation of the BSTM in three ways. First, here we evaluated 'single-shot' implementations of methods 2, 3, and 6. That is, we did not incrementally accumulate information about $\psi_s$ across trials. For data like those in @h95, where listeners' rarely hear speech from the same talker for multiple trials in a row, this is likely an acceptable simplifying assumption. However, the single-shot implementations considered here might well underestimate listeners' ability to integrate information across observations from the same talker. In future work, we thus plan to extend these methods to incrementally update the prior based on observations from the same talker [see discussion in @xie2023]. The Bayesian approach inherent in the P/BSTM is ideally suited for this purpose.
+In future work we plan to expand evaluation of the BSTM in three ways. First, here we evaluated 'single-shot' implementations of methods 2, 3, and 6. That is, we did not incrementally accumulate information about $\psi_s$ across trials. For data like those in @h95, where listeners rarely hear speech from the same talker for multiple trials in a row, this is likely an acceptable simplifying assumption. However, the single-shot implementations considered here might well underestimate listeners' ability to integrate information across observations from the same talker. In future work, we thus plan to extend these methods to incrementally update the prior based on observations from the same talker [see discussion in @xie2023]. The Bayesian approach inherent in the P/BSTM is ideally suited for this purpose.
 
 Second, the BSTM can naturally integrate the perception of indexical speaker characteristics such as age [@b_age_2018], height [@b_height_2017], or gender [@b_gender_21], via their shared reliance on $\psi_s$ [see also @kleinschmidt2018]. For example, consider the perception of some speaker characteristic $\theta$. To simultaneously estimate vowel category, $\psi_s$, *and* this new characteristic, we would add it to our model as in @eq-BSTM-joint-posterior-psi-vowel-and-indexical. This requires adding $\theta$ to the likelihood and considering joint prior of $\theta$, $\psi_s$ and vowel category. Such an approach would allow for a direct empirical comparison of different models regarding the perceptual integration of speech and social perception with relatively modest extensions of the models described here.
 
@@ -649,6 +713,6 @@ $$
 P(\text{v},  \psi_s, \theta| \vec{G}) \propto P(\vec{G} | \text{v}, \psi_s, \theta) \cdot P(\text{v},  \psi_s, \theta)
 $$ {#eq-BSTM-joint-posterior-psi-vowel-and-indexical}
 
-Third and finally, the general framework for incremental normalization presented here can be extended to a wide range of other normalization methods. This will allow comparisons between different approaches to incremental formant normalization.
+Third and finally, the general framework for incremental normalization presented here can be extended to a wide range of other normalization methods. This will allow comparisons between different approaches to incremental formant normalization and beyond. In particular, future work can investigate how incremental normalization can be integrated into modern ASR architectures, to improve the suitability of these architectures as a model of human speech perception. This will also researchers to move beyond normalization of formant point estimates (e.g., F1-F3 at the start and end of the vowel), addressing longstanding concerns that human listeners use a much broader sets of acoustic features when identifying vowels [@hn99, @h2000, @bn2012].
 
 # References
