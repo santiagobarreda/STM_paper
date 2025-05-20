@@ -537,7 +537,7 @@ We bootstrapped the following process over 1000 iterations for each method (all 
 
 5.  Calculate performance metrics A)-C) described above.
 
-We compare 11 different methods that differ in terms of whether and/or how they estimate $\psi_s$:
+We compare eight different methods that differ in terms of whether and/or how they estimate $\psi_s$:
 
  + **No normalization**
    + input is $\vec{F}$ (Hz)
@@ -562,7 +562,7 @@ We compare 11 different methods that differ in terms of whether and/or how they 
 
 ## Results
 
-The results of the bootstrap analysis are presented in @fig-bootboxplot. Method 6 offers the best fit against listeners' categorization responses for the @h95 data. These differences hold regardless of whether the PSTM or BSTM is used. Based on the bootstrap, all differences---except for the contrast between method 6 and unnormalized Hz---are significant, i.e., 95% quantiles do not overlap 0 in @fig-bootboxplot (a). However, method 6 performed better than unnormalized Hz in 94.4% of all bootstrap iterations. This shows the importance of considering prior information about $\psi_s$ during speech perception, and also the potential usefulness of considering the joint distribution of $\psi_s$ and $f0$ in perception.
+The results of the bootstrap analysis are presented in @fig-bootboxplot. Method 6 offers the best fit against listeners' categorization responses for the @h95 data. Based on the bootstrap, all differences---except for the contrast between method 6 and unnormalized Hz---are significant, i.e., 95% quantiles do not overlap 0 in @fig-bootboxplot (a). However, method 6 performed better than unnormalized Hz in 94.4% of all bootstrap iterations. This shows the importance of considering prior information about $\psi_s$ during speech perception, and also the potential usefulness of considering the joint distribution of $\psi_s$ and $f0$ in perception.
 
 ```{r load-b, eval = TRUE, echo = FALSE}
 load ("simulation_data/hz_sim.RData")
@@ -585,7 +585,7 @@ load ("simulation_data/PSTM2_sim.RData")
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-bootboxplot
-#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and BSTM method 6 across bootstrap iterations. Points indicate bootstrap means; intervals indicate lower 95% quantiles. Arrows indicate the direction of log-likelihoods for the single-trial application of balanced-data method 1. These were more than an order of magnitude lower than all other log-likelihoods and thus do appear on the plot. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$ (only methods that provide estimates of $\\psi_s$ are shown)."
+#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and PSTM method 6 across bootstrap iterations. Points indicate bootstrap means; intervals indicate lower 95% quantiles. Arrows indicate the direction of log-likelihoods for the single-trial application of balanced-data method 1. These were more than an order of magnitude lower than all other log-likelihoods and thus do appear on the plot. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$ (only methods that provide estimates of $\\psi_s$ are shown)."
 
 ######
 
@@ -593,26 +593,22 @@ loglik =
   cbind(hz_loglikelihoods,hz_log_loglikelihoods,
         lobanov_loglikelihoods,
         PSTM1_loglikelihoods,PSTM1_single_loglikelihoods,
-        PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods,
-        BSTM2_loglikelihoods,BSTM3_loglikelihoods,BSTM6_loglikelihoods)
+        PSTM2_loglikelihoods,PSTM3_loglikelihoods,PSTM6_loglikelihoods)
 
 loglik_intended = 
   cbind(hz_intended_loglikelihoods,hz_log_intended_loglikelihoods,
         lobanov_intended_loglikelihoods,
         PSTM1_intended_loglikelihoods,PSTM1_single_intended_loglikelihoods,
         PSTM2_intended_loglikelihoods,PSTM3_intended_loglikelihoods,
-        PSTM6_intended_loglikelihoods,
-        BSTM2_intended_loglikelihoods,BSTM3_intended_loglikelihoods,
-        BSTM6_intended_loglikelihoods)
+        PSTM6_intended_loglikelihoods)
 
 rmss = cbind(PSTM1_single_rmss, 
-             PSTM2_rmss,PSTM3_rmss,PSTM6_rmss,
-             BSTM2_rmss,BSTM3_rmss,BSTM6_rmss)
+             PSTM2_rmss,PSTM3_rmss,PSTM6_rmss)
 
 
-loglik_diffs = (loglik - loglik[,11])
-loglik_intended_diffs = (loglik_intended - loglik_intended[,11])
-rmss_diffs = (rmss - rmss[,7])
+loglik_diffs = (loglik - loglik[,8])
+loglik_intended_diffs = (loglik_intended - loglik_intended[,8])
+rmss_diffs = (rmss - rmss[,4])
 
 probs_interval_loglik <- c(0.0, 0.95)
 probs_interval_rms <- c(0.05, 1)
@@ -621,9 +617,9 @@ par (mfcol = c(1,3), mar = c(5,.2,.1,.2), oma = c(0.6,9.1,2.2,0.2))
 
 labels = c("Hz","log-Hz","Lobanov","PSTM1\n(balanced data)",
            "PSTM1\n(single trial)",
-           "PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
+           "PSTM2","PSTM3","PSTM6")
 cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
-         "grey60","black","grey60","grey60","black")
+         "grey60","black")
 
 bmmb::brmplot (
   brms::posterior_summary(loglik_diffs, prob = probs_interval_loglik),
@@ -633,12 +629,12 @@ bmmb::brmplot (
 
 abline (v=0,lty=3,col="black")
 #legend("bottomleft", legend="(a)", bty="n", cex=1.5)
-mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
+mtext (side=1,"Difference in model likelihood\n(compared to PSTM6)",line=4.5)
 mtext (side=3,"(a) Predicting Perceived Category",line=0.2)
 arrows (x0 = -4500, x1 = -5000, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","black","grey60","grey60","grey60",
-         "grey60","grey60","grey60","grey60","grey60")
+         "grey60","grey60")
 
 bmmb::brmplot (
   brms::posterior_summary(loglik_intended_diffs, prob = probs_interval_loglik),
@@ -648,17 +644,17 @@ bmmb::brmplot (
 
 abline (v=0,lty=3,col="black")
 #legend("bottomleft", legend="(b)", bty="n", cex=1.5)
-mtext (side=1,"Difference in model likelihood\n(compared to BSTM6)",line=4.5)
+mtext (side=1,"Difference in model likelihood\n(compared to PSTM6)",line=4.5)
 axis (side=1, cex.axis=1.4, at = c(-1000,0,1000,2000))
 mtext (side=3,"(b) Predicting Intended Category",line=0.2)
 arrows (x0 = -1250, x1 = -1750, y0 = 7, y1 = 7, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
-         "grey60","black","grey60","grey60","black")
+         "grey60","black")
 
 par (mar = c(5,.2,11.5,.2))
 
-labels = c("PSTM1\n(single trial)","PSTM2","PSTM3","PSTM6","BSTM2","BSTM3","BSTM6")
+labels = c("PSTM1\n(single trial)","PSTM2","PSTM3","PSTM6")
 
 tmp = brms::posterior_summary(rmss, prob = probs_interval_rms)
 tmp_diff = brms::posterior_summary(rmss_diffs, prob = probs_interval_rms)
