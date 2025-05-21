@@ -35,7 +35,7 @@ classifications = h95_classifications
 
 # Introduction
 
-Cross-talker variability poses a computational challenge for speech perception: since different talkers can realize the same phonetic information with different acoustics, robust perception across talkers can only be achieved by somehow adjusting to these differences. At the same time, cross-talker differences in pronunciation provide information about the language background and social identity of speakers. One way to approach these issues has been to describe both linguistic and social perception as inference over the joint distribution of auditory percepts (e.g., in the form of phonetic cues), linguistic, and social categories. This can be conceptualized as similarity-based inferences over exemplars [@johnson1997; @sumner2011] or as Bayesian inferences [@kleinschmidt-jaeger2015; @kleinschmidt2018]. However, there is of yet no widely available model that implements these ideas and makes them testable. This motivates the present work.
+Cross-talker variability poses a computational challenge for speech perception: since different talkers can realize the same phonetic information with different acoustics, robust perception across talkers can only be achieved by adjusting to these differences. However, cross-talker differences in pronunciation also provide information about the language background and social identity of speakers. One way to approach these issues is to consider both linguistic and social perception as inference over the joint distribution of auditory percepts (e.g., in the form of phonetic cues), linguistic, and social categories. This can be conceptualized as similarity-based inferences over exemplars [@johnson1997; @sumner2011] or as Bayesian inferences [@kleinschmidt-jaeger2015; @kleinschmidt2018]. However, there is of yet no widely available model that implements these ideas and makes them testable. This motivates the present work.
 
 Here, we focus on vowel perception. We (re-)introduce the *Probabilistic Sliding Template Model (PSTM)* [@NA07] and---for the first time---evaluate it quantitatively in terms of its ability to explain human behavior. The PSTM is a Bayesian model of *vowel normalization*, the perceptual mapping from the acoustics of the speech signal to linguistic representation. The model is rooted in principled considerations about the biology of auditory perception in the mammalian brain, validated by cross-species comparisons. The formant normalization procedure proposed by (P)STM---*uniform scaling*, described in more detail below---is closely related to size variation due to the physics of acoustic resonators. Indeed, several animal species, such as koalas [@charlton2012], dogs [@taylor2010], and red deer [@reby2005], have been found to separate uniform scaling (size information) from the communicative information present in the signal [for review, @b20]. 
 
@@ -506,14 +506,7 @@ $$ {#eq-method6-solve}
 
 # Bootstrap Evaluation {#sec-bootstrap}
 
-To compare the performance of different implementations of the STM in understanding perceptual vowel normalization, we conduct a bootstrap analysis using data on the perception of US English vowels [@h95]. A walk-through of the analysis is available as an R markdown vignette in the OSF repo listed above. The `STM` package allows researchers to conduct the similar analyses on their own data, with just a handful of R commands. 
-
-The @h95 data include acoustic measures from 139 speakers producing one instance of twelve vowels each, including formant measures at multiple time slices. We used formant measurements at 20% and 80% of the vowel duration. This meant each vowel token was represented by a vector of length six, two measurements for each of three formants. Following @NA07, we used two time points, capturing that formant dynamics affect vowel perception for the dialect in the database [@hn99]. By fitting multivariate normal distributions in this six-dimensional space, we assume that listeners have learned expectations about the (co)variance between formants within and across time points. <!-- point about coarticulation MOVED UP HERE FROM END OF NEXT SECTION -->
-
-The @h95 data also contain 12-alternative forced-choice categorization responses for each vowel token, aggregated across 20 listeners of the same dialect as the speakers (average accuracy = 95%).^[The data used to estimate vowel templates should reflect the sort of listener that the researcher aims to model. E.g., a template trained on a database of Canadian English will not be suitable to model the perception of an Irish English listener [see discussion in @persson2025].] Crucially, these responses were elicited over stimuli from the different speakers in the database, presented  in randomized order---i.e., precisely the type of input for which the naive estimation of $\psi_s$ (@eq-method-naive) is expected to yield unreliable results for listeners (confirmed below).
-
-
-## Approach
+To compare the performance of different implementations of the STM in understanding perceptual vowel normalization, we conduct a bootstrap analysis using data on the perception of US English vowels [@h95]. A walk-through of the analysis is available as an R markdown vignette in the OSF repo listed above. The `STM` package allows researchers to conduct the similar analyses on their own data, with just a handful of R commands. Details regarding the bootstrap evaluation are found in the Appendix.  
 
 For each bootstrap data set, we compare approaches based on three performance metrics:
 
@@ -523,42 +516,7 @@ For each bootstrap data set, we compare approaches based on three performance me
 
   C) The **root-mean square (RMS) error in estimating $\psi_s$** compared to an estimate of $\hat{\psi}$ obtained from a balanced sample of each speaker's entire vowel system, and @eq-method-naive. Ultimately, researchers interested in assessing how well a method describes listeners' estimation of $\psi_s$ should compare each method's predictions for $\hat{\psi}_s$ against listeners' estimates.
 
-Of note, the use of likelihood as a metric to assess A) the fit against listeners' perception and B) the intended category differs from the approach in @NA07. Nearey and Assman instead used the accuracy (under the criterion choice rule) of predicting the intended category label for B) and, critically, did not evaluate against listeners' perception. The use of accuracy as a metric is now understood to be problematic, as it does not capture how well a model predicts the *distribution* of responses [for discussion, @persson2025]. 
-
-We bootstrapped the following process over 1000 iterations for each method (all functions referred to are from the `STM` package):
-
-1.  Randomly divide the data into a 79-speaker training set and a 60-speaker testing set. Resample the training data (with replacement) at the speaker level. Sixty-three vowel tokens (4%) had one or two missing formant measurements (out of 6), representing 0.09% of the total formant measurements in the data. The missing values were imputed using stochastic regression imputation, independently for each iteration (using the `impute_NA` function).
-
-2.  Uniformly scale the training data (the `normalize` function), by estimating each speaker's $\psi_s$ using their complete vowel system as in @eq-method-naive, and normalizing it as in @eq-define-N.
-
-3.  Estimate the dialect-specific category means and covariance matrices of all vowels using the normalized training data (with `create_template`). ^[We follow @NA07 in estimating a single pooled covariance matrix across all vowel categories. It is an open questions whether category-specific covariance matrices, as in @eq-posterior-G, provide a better fit to listener's responses. The `STM` package supports either option.] **Each iteration of the bootstrap  simulates a 'listener' of the dialect with slightly different speech experience.**
-
-4.  For each token in the testing data, estimate $\hat{\psi}_{s, \text{v}}$ for each vowel category using each method. Use these values of $\hat{\psi}_{s, \text{v}}$ to obtain the winning estimate $\hat{\psi}_s$ and calculate the posterior probability of each vowel category.
-
-5.  Calculate performance metrics A)-C) described above.
-
-We compare eight different methods that differ in terms of whether and/or how they estimate $\psi_s$:
-
- + **No normalization**
-   + input is $\vec{F}$ (Hz)
-   + input is $\vec{G}$ (log Hz), allowing an assessment of whether log-transformation in and off itself helps.
-
- + **Normalization with $\hat{\psi}_s$ estimated using the 'classic approach'** in @eq-method-naive [method 1 from @NA07]
-   + over the entire training data (*PSTM1 (balanced data)*)
-   + based on the individual token (*PSTM1 (single trial)*), as a more direct baseline for the remaining methods (all of which are based on individual tokens)
-
- + **Normalization using the most commonly used normalization method [@lobanov1971] ** 
-   + using the entire training data (Hz). This method involves standardization of each speaker's formants by subtracting the mean and dividing by the standard deviation of each formant, independently for each time point. 
-
- + **Normalization with $\hat{\psi}_s$ estimated using *PSTM* **
-   + method 2
-   + method 3
-   + method 6
-
- <!-- + **Normalization with $\hat{\psi}_s$ estimated using *BSTM* ** -->
- <!--   + method 2 -->
- <!--   + method 3 -->
- <!--   + method 6 -->
+Of note, the use of likelihood as a metric to assess A) the fit against listeners' perception and B) the intended category differs from the approach in @NA07. Nearey and Assman used the accuracy (under the criterion choice rule) of predicting the intended category label for B) and, critically, did not evaluate against listeners' perception. The use of accuracy as a metric is now understood to be problematic, as it does not capture how well a model predicts the *distribution* of responses [for discussion, @persson2025]. 
 
 ## Results
 
@@ -570,16 +528,16 @@ load ("simulation_data/hz_log_sim.RData")
 load ("simulation_data/lobanov_sim.RData")
 load ("simulation_data/PSTM1_single_sim.RData")
 load ("simulation_data/PSTM1_sim.RData")
-load ("simulation_data/BSTM6_sim.RData")
-load ("simulation_data/BSTM2_sim.RData")
-load ("simulation_data/BSTM3_sim.RData")
+#load ("simulation_data/BSTM6_sim.RData")
+#load ("simulation_data/BSTM2_sim.RData")
+#load ("simulation_data/BSTM3_sim.RData")
 load ("simulation_data/PSTM6_sim.RData")
 load ("simulation_data/PSTM3_sim.RData")
 load ("simulation_data/PSTM2_sim.RData")
 ```
 
 ```{r figure4, eval=TRUE}
-#| fig-height: 5
+#| fig-height: 4
 #| fig-width: 10
 #| echo: false
 #| cache: true
@@ -631,7 +589,7 @@ abline (v=0,lty=3,col="black")
 #legend("bottomleft", legend="(a)", bty="n", cex=1.5)
 mtext (side=1,"Difference in model likelihood\n(compared to PSTM6)",line=4.5)
 mtext (side=3,"(a) Predicting Perceived Category",line=0.2)
-arrows (x0 = -4500, x1 = -5000, y0 = 7, y1 = 7, code = 2, length = 0.1)
+arrows (x0 = -4500, x1 = -5000, y0 = 4, y1 = 4, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","black","grey60","grey60","grey60",
          "grey60","grey60")
@@ -647,7 +605,7 @@ abline (v=0,lty=3,col="black")
 mtext (side=1,"Difference in model likelihood\n(compared to PSTM6)",line=4.5)
 axis (side=1, cex.axis=1.4, at = c(-1000,0,1000,2000))
 mtext (side=3,"(b) Predicting Intended Category",line=0.2)
-arrows (x0 = -1250, x1 = -1750, y0 = 7, y1 = 7, code = 2, length = 0.1)
+arrows (x0 = -1250, x1 = -1750, y0 = 4, y1 = 4, code = 2, length = 0.1)
 
 cols = c("grey60","grey60","grey60","grey60","grey60","grey60",
          "grey60","black")
@@ -687,5 +645,45 @@ Here, we show that the predictive power of the PSTM improves further, and in non
 
 The general framework for incremental normalization presented here can be extended to a wide range of other normalization methods. This will allow comparisons between different approaches to incremental formant normalization and beyond. In particular, future work can investigate how incremental normalization can be integrated into modern ASR architectures, to improve the suitability of these architectures as a model of human speech perception. This will also researchers to move beyond normalization of formant point estimates (e.g., F1-F3 at the start and end of the vowel), addressing longstanding concerns that human listeners use a much broader sets of acoustic features when identifying vowels [@hn99, @h2000, @bn2012].
 
+# Appendix: Bootstrap details
 
+The @h95 data include acoustic measures from 139 speakers producing one instance of twelve vowels each, including formant measures at multiple time slices. We used formant measurements at 20% and 80% of the vowel duration. This meant each vowel token was represented by a vector of length six, two measurements for each of three formants. Following @NA07, we used two time points, capturing that formant dynamics affect vowel perception for the dialect in the database [@hn99]. By fitting multivariate normal distributions in this six-dimensional space, we assume that listeners have learned expectations about the (co)variance between formants within and across time points. <!-- point about coarticulation MOVED UP HERE FROM END OF NEXT SECTION -->
+
+The @h95 data also contain 12-alternative forced-choice categorization responses for each vowel token, aggregated across 20 listeners of the same dialect as the speakers (average accuracy = 95%).^[The data used to estimate vowel templates should reflect the sort of listener that the researcher aims to model. E.g., a template trained on a database of Canadian English will not be suitable to model the perception of an Irish English listener [see discussion in @persson2025].] Crucially, these responses were elicited over stimuli from the different speakers in the database, presented  in randomized order---i.e., precisely the type of input for which the naive estimation of $\psi_s$ (@eq-method-naive) is expected to yield unreliable results for listeners (confirmed below).
+
+We bootstrapped the following process over 1000 iterations for each method (all functions referred to are from the `STM` package):
+
+1.  Randomly divide the data into a 79-speaker training set and a 60-speaker testing set. Resample the training data (with replacement) at the speaker level. Sixty-three vowel tokens (4%) had one or two missing formant measurements (out of 6), representing 0.09% of the total formant measurements in the data. The missing values were imputed using stochastic regression imputation, independently for each iteration (using the `impute_NA` function).
+
+2.  Uniformly scale the training data (the `normalize` function), by estimating each speaker's $\psi_s$ using their complete vowel system as in @eq-method-naive, and normalizing it as in @eq-define-N.
+
+3.  Estimate the dialect-specific category means and covariance matrices of all vowels using the normalized training data (with `create_template`). ^[We follow @NA07 in estimating a single pooled covariance matrix across all vowel categories. It is an open questions whether category-specific covariance matrices, as in @eq-posterior-G, provide a better fit to listener's responses. The `STM` package supports either option.] **Each iteration of the bootstrap  simulates a 'listener' of the dialect with slightly different speech experience.**
+
+4.  For each token in the testing data, estimate $\hat{\psi}_{s, \text{v}}$ for each vowel category using each method. Use these values of $\hat{\psi}_{s, \text{v}}$ to obtain the winning estimate $\hat{\psi}_s$ and calculate the posterior probability of each vowel category.
+
+5.  Calculate performance metrics A)-C) described in @sec-bootstrap.
+
+We compare eight different methods that differ in terms of whether and/or how they estimate $\psi_s$:
+
+ + **No normalization**
+   + input is $\vec{F}$ (Hz)
+   + input is $\vec{G}$ (log Hz), allowing an assessment of whether log-transformation in and off itself helps.
+
+ + **Normalization with $\hat{\psi}_s$ estimated using the 'classic approach'** in @eq-method-naive [method 1 from @NA07]
+   + over the entire training data (*PSTM1 (balanced data)*)
+   + based on the individual token (*PSTM1 (single trial)*), as a more direct baseline for the remaining methods (all of which are based on individual tokens)
+
+ + **Normalization using the most commonly used normalization method [@lobanov1971] ** 
+   + using the entire training data (Hz). This method involves standardization of each speaker's formants by subtracting the mean and dividing by the standard deviation of each formant, independently for each time point. 
+
+ + **Normalization with $\hat{\psi}_s$ estimated using *PSTM* **
+   + method 2
+   + method 3
+   + method 6
+
+ <!-- + **Normalization with $\hat{\psi}_s$ estimated using *BSTM* ** -->
+ <!--   + method 2 -->
+ <!--   + method 3 -->
+ <!--   + method 6 -->
+ 
 # References
