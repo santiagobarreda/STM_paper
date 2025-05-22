@@ -96,7 +96,7 @@ $$ {#eq-define-Gstar}
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-uniform-scaling
-#| fig-cap: "(a) Comparison of two vowel spaces (based on data in Hillenbrand et al., 1995) differing according to a single multiplicative scaling parameter ($\\rho_s$). Each IPA symbols shows a speaker's vowel target $\\vec{F}^{s*}_{\\mathrm{v}}$ in an F1-F2 space. The \"x\" marks an ambiguous vowel token whose interpretations depends on the assumed vowel space. (b) The outline of the same vowel spaces presented as polygons. Uniform scaling expands or shrinks the polygons but preserves their shape. (c) The same comparison expressed in log-transformed Hz. Each IPA symbols shows a speaker's vowel target $\\vec{G}^{s*}_{\\mathrm{v}}$ in a log-F1-F2 space. The two vowel systems now differ in $\\psi_s$. (d) When expressed in log-Hz, uniform scaling results in shifts of the polygons without changing their shape and size."
+#| fig-cap: "(a) Comparison of vowel spaces differing according to a single multiplicative scaling parameter ($\\rho_s$). Symbols indicate speaker's vowel targets $\\vec{F}^{s*}_{\\mathrm{v}}$ in an F1-F2 space. The \"x\" marks an ambiguous token whose interpretation depends on the assumed vowel space. (b) The outline of the same vowel spaces presented as polygons. Uniform scaling expands or shrinks the polygons but preserves their shape. (c) The same comparison expressed in log-transformed Hz, with targets $\\vec{G}^{s*}_{\\mathrm{v}}$ shown in a log-F1-F2 space. The vowel systems now differ in $\\psi_s$. (d) When expressed in log-Hz, uniform scaling results in shifts of the polygons without changes in their shape or size."
 
 ######
 vs = c("æ","ɑ","ɔ","ɛ","e","ɝ","ɪ","i","o","ʊ","ʌ","u")
@@ -279,7 +279,7 @@ Using a uniform prior on $\psi_s$ means that our 'best' estimate of $\psi_s$ can
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-slidingtemplate2
-#| fig-cap: "(a) A formant input \"x\", relative to four possible ways of sliding the dialect template, corresponding to four different values of $\\hat{\\psi}_s$. The template 'slides' along $G1=G2$ (black line). (b) Alternatively, the vowel can be thought of 'sliding' across the normalized template. Black line indicates the possible interpretations of the point in (a), ellipses enclose one standard deviation. Points indicate the best possible locations for /ɑ/ (1), /c/ (2), /o/ (3), and /ʌ/ (4), according to method 2. These interpretations correspond to the different vowel spaces (colors) in (a). (c) Posterior distributions of $\\psi_s$ given different vowel categories. Because the prior exerts no influence in method 2 , these posteriors are proportional to the likelihood: $P(\\vec{G}_x | \\text{v}_i, \\hat{\\psi}_{s})$. Thus, these curves represent the values of the densities of the distributions in (b) along the line. This highlighta the relationship between categorization and $\\psi_s$ estimation."
+#| fig-cap: "(a) A formant input \"x\", relative to four possible positions of the dialect template, corresponding to four different values of $\\hat{\\psi}_s$. The template 'slides' along $G1=G2$ (black line). (b) Alternatively, the vowel can be thought of 'sliding' across the normalized template. The black line indicates possible interpretations of the point in (a), ellipses enclose one standard deviation. Points indicate the best possible locations for /ɑ/ (1), /c/ (2), /o/ (3), and /ʌ/ (4), according to method 2. These interpretations correspond to the different vowel spaces (colors) in (a). (c) Posterior distributions of $\\psi_s$ given different vowel categories. Because the prior exerts no influence in method 2, these posteriors are proportional to the likelihood: $P(\\vec{G}_x | \\text{v}_i, \\hat{\\psi}_{s})$. Thus, these curves represent the values of the densities of the distributions in (b) along the line. This highlights the relationship between categorization and $\\psi_s$ estimation."
 
 ##############
 
@@ -394,7 +394,7 @@ Just like the multivariate Normal distributions for the vowel templates, estimat
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-slidingtemplate3
-#| fig-cap: "Comparison of different methods (columns) to estimating the prior probability of $\\psi_s$. (top) Likelihood of $\\psi_s$ values given different vowel categories in @fig-slidingtemplate2. (middle) Prior distribution of $\\psi_s$. (bottom) Posterior probabilities of $\\psi_s$ conditional on vowel category (combining likelihood and prior in each column). The most probable $\\hat{\\psi}_s$ (location on x-axis of highest peak), and vowel category (color of curve with highest peak), changes as a function of the selected prior, and the vowel token's $f0$."
+#| fig-cap: "Comparison of different approaches (columns) to estimating the prior probability of $\\psi_s$. (top) Likelihood of $\\psi_s$ values given different vowel categories in @fig-slidingtemplate2. (middle) Prior distribution of $\\psi_s$. (bottom) Posterior probabilities of $\\psi_s$ conditional on vowel category (combining likelihood and prior in each column). The most probable $\\hat{\\psi}_s$ (location on x-axis of highest peak), and vowel category (color of curve with highest peak), changes as a function of the selected prior, and the vowel token's $f0$."
 
 #####
 
@@ -547,7 +547,7 @@ load ("simulation_data/PSTM2_sim.RData")
 #| cache: true
 #| fig-dpi: 600
 #| id: fig-bootboxplot
-#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and PSTM method 6 across bootstrap iterations. Points indicate bootstrap means; intervals indicate lower 95% quantiles. Arrows indicate the direction of log-likelihoods for the single-trial application of balanced-data method 1. These were more than an order of magnitude lower than all other log-likelihoods and thus do appear on the plot. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$ (only methods that provide estimates of $\\psi_s$ are shown)."
+#| fig-cap: "(a) Difference in model log-likelihoods of listeners' responses between each model and PSTM method 6 across bootstrap iterations. Points indicate bootstrap means; intervals indicate lower 95% quantiles. Arrows indicate the direction of log-likelihoods for the single-trial application of balanced-data method 1. These were more than an order of magnitude lower than all other log-likelihoods and thus do not appear on the plot. (b) Same as (a) but for the vowel category that the talker intended to produce, rather than what listeners responded. (c) Root-mean-squared (RMS) error for $\\psi_s$ prediction for the approaches that estimate $\\psi_s$ (only methods that provide estimates of $\\psi_s$ are shown)."
 
 ######
 
