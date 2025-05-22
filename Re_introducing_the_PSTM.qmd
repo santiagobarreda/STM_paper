@@ -245,9 +245,10 @@ These $\psi_{s,\text{v}}$ are then used to categorize the formant input into a w
 $$
 \begin{align}
 c :=  \underset{\text{v}}{\arg\max} \left[ P(\text{v} | \vec{G}, \hat{\psi}_{s,\text{v}}) \right]
-\end{align} \\ 
+\\ 
 \hat{\psi}_s := \underset{\psi_s}{\arg\max} \left[ P(\psi_s | \vec{G}, \text{v}=c) \right] = 
 \hat{\psi}_{s,\text{v=c}}
+\end{align}
 $$ {#eq-criterion-psi-and-vowel}
 
 $$
