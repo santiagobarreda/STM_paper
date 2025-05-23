@@ -45,11 +45,7 @@ The incremental inference mechanism described by the PSTM stands out even when c
 
 ## Why we wrote this paper, and why you might want to read it
 
-We believe that @NA07 is one of the most under-appreciated papers on speech perception. It has been cited less than 40 times over 17 years. During the same time, there have been over 17,000 research articles on vowel identification and formant normalization. 
-<!-- Over 17,000 of these mention vowel formants, vowel identification/categorization/recognition, and/or vowel/formant perception; over 5,000 additionally mention normalization.  -->
-Among the articles covering formant normalization, Lobanov normalization [@lobanov1971] is cited 
-<!-- three- to four-times as often as Nearey’s STM [@n78] and  -->
-about 100-times more often than the PSTM [@NA07]---despite the fact that the latter is the only published model of the incremental inferences underlying vowel perception. So, here is a ground-breaking idea and promising candidate model of how humans perceive spectral information, with far-reaching consequences for research from typology to sociolinguistics to speech perception, ... and few seem to know of it. 
+We believe that @NA07 is one of the most under-appreciated papers on speech perception. It has been cited less than 40 times over 17 years. During the same time, there have been over 17,000 research articles on vowel identification and formant normalization. Among the articles covering formant normalization, Lobanov normalization [@lobanov1971] is cited about 100-times more often than the PSTM [@NA07]---despite the fact that the latter is the only published model of the incremental inferences underlying vowel perception. So, here is a ground-breaking idea and promising candidate model of how humans perceive spectral information, with far-reaching consequences for research from typology to sociolinguistics to speech perception, ... and few seem to know of it. 
 
 <!-- 
 (vowel | vowels) ("vowel categorization" | "vowel recognition" | "vowel perception" | "vowel identification" | "formant perception" | "vowel formant" | "vowel formants") "normalization" "uniform scaling": 72
@@ -174,9 +170,7 @@ Such uniform scaling provides a comparatively parsimonious approach, assuming th
 
 # The Probabilistic Sliding Template Model of vowel perception (PSTM)
 
-<!-- As anticipated above, listeners are assumed to learn dialect-specific vowel representations over the *normalized* vowel formants. These representations are assumed to capture the formant distributions that result for each vowel due to noise during the articulation and perception of formants.  -->
-
-@NA07 referred to listeners' dialect-specific implicit knowledge about each vowel's formant distributions as "probabilistic templates". These templates could be represented, for instance, as exemplar clouds [@johnson1997] or as parametric distributions [@NA07]. For computational tractability, we follow the latter approach and represent vowel categories as multivariate Normal distributions over normalized formants, with mean vectors $\vec{\mu}_{\text{v}}$ and covariance matrices $\vec{\Sigma}_\text{v}$. We may then use the multivariate normal density ($MVN$) of each vowel to calculate the likelihood of any observed log-transformed formant input $\vec{G}$ given that vowel and the speaker-specific scaling parameter $\psi_s$. This can be done by either sliding the template as in @fig-uniform-scaling(d) or, equivalently, by scaling the formants into the normalized template space:
+@NA07 referred to listeners' dialect-specific implicit knowledge about each vowel's formant distributions as "probabilistic templates", where listeners are assumed to learn dialect-specific vowel representations over the *normalized* vowel formants. These templates could be represented, for instance, as exemplar clouds [@johnson1997] or as parametric distributions [@NA07]. For computational tractability, we follow the latter approach and represent vowel categories as multivariate Normal distributions over normalized formants, with mean vectors $\vec{\mu}_{\text{v}}$ and covariance matrices $\vec{\Sigma}_\text{v}$. We may then use the multivariate normal density ($MVN$) of each vowel to calculate the likelihood of any observed log-transformed formant input $\vec{G}$ given that vowel and the speaker-specific scaling parameter $\psi_s$. This can be done by either sliding the template as in @fig-uniform-scaling(d) or, equivalently, by scaling the formants into the normalized template space:
 
 $$
 P(\vec{G} | \mathrm{v}, \psi_s) := MVN (\vec{G} | \vec{\mu}_{\text{v}} + \vec{\psi}_s, \vec{\Sigma}_{\text{v}}) = MVN (\vec{G} - \vec{\psi}_s| \vec{\mu}_{\text{v}}, \vec{\Sigma}_{\text{v}}) = MVN (\vec{N} | \vec{\mu}_{\text{v}}, \vec{\Sigma}_{\text{v}})
@@ -250,13 +244,6 @@ c :=  \underset{\text{v}}{\arg\max} \left[ P(\text{v} | \vec{G}, \hat{\psi}_{s,\
 \hat{\psi}_{s,\text{v=c}}
 \end{align}
 $$ {#eq-criterion-psi-and-vowel}
-
-$$
-\begin{align}
-\hat{\psi}_s := \underset{\psi_s}{\arg\max} \left[ \hat{\psi}_{s,\text{v}} \right] \\
-c :=  \underset{\text{v}}{\arg\max} \left[ \hat{\psi}_{s,\text{v}} \right]
-\end{align}
-$$ {#eq-criterion-psi-and-vowel-original}
 
 ## Method 2: Unrestricted optimization of $\psi_s$
 
@@ -686,9 +673,4 @@ We compare eight different methods that differ in terms of whether and/or how th
    + method 3
    + method 6
 
- <!-- + **Normalization with $\hat{\psi}_s$ estimated using *BSTM* ** -->
- <!--   + method 2 -->
- <!--   + method 3 -->
- <!--   + method 6 -->
- 
 # References
